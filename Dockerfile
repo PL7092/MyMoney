@@ -3,26 +3,18 @@
 # =========================
 FROM node:20-alpine AS builder
 
-# Diretório de trabalho
 WORKDIR /app
 
 # Instala ferramentas de build
 RUN apk add --no-cache python3 make g++
 
-# Copia apenas o arquivo de dependências (package.json)
+# Copia package.json e instala dependências
 COPY package.json ./
-
-# Instala todas as dependências (dev + prod)
 RUN npm install --legacy-peer-deps --no-audit --no-fund
 
-# Copia o restante do código
+# Copia código e faz build
 COPY . .
-
-# Build da aplicação React (assumindo que seja frontend)
 RUN npm run build
-
-# Remove devDependencies e limpa cache
-RUN npm prune --production && npm cache clean --force
 
 # =========================
 # Stage 2: Production
@@ -31,7 +23,7 @@ FROM node:20-alpine AS production
 
 WORKDIR /app
 
-# Instala runtime dependencies necessárias
+# Instala runtime dependencies
 RUN apk add --no-cache \
     wget \
     curl \
@@ -40,21 +32,19 @@ RUN apk add --no-cache \
     gzip \
     && rm -rf /var/cache/apk/*
 
-# Copia apenas package.json para instalar dependências
+# Copia package.json diretamente do contexto (não do builder)
 COPY package.json ./
 
-# Instala apenas production dependencies (sem lock file para evitar conflitos)
+# Instala apenas production dependencies
 RUN npm install --omit=dev --legacy-peer-deps --no-audit --no-fund \
     && npm cache clean --force
 
-# Copia build do frontend
+# Copia build e arquivos necessários
 COPY --from=builder /app/dist ./dist
-
-# Copia servidor e scripts SQL
 COPY server ./server
 COPY sql ./sql
 
-# Garante diretórios com permissões corretas
+# Configura permissões
 RUN mkdir -p /app/uploads /app/config /app/logs /app/backups \
     && addgroup -g 1001 -S nodejs \
     && adduser -S appuser -u 1001 -G nodejs \
@@ -70,6 +60,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
 
 EXPOSE 3001
 
-# Entrypoint com dumb-init
 ENTRYPOINT ["dumb-init", "--"]
 CMD ["node", "server/server.js"]
