@@ -9,11 +9,11 @@ WORKDIR /app
 # Instala ferramentas de build
 RUN apk add --no-cache python3 make g++
 
-# Copia apenas os arquivos de dependências primeiro
-COPY package*.json ./
+# Copia apenas o arquivo de dependências (package.json)
+COPY package.json ./
 
 # Instala todas as dependências (dev + prod)
-RUN npm ci --legacy-peer-deps --no-audit --no-fund
+RUN npm install --legacy-peer-deps --no-audit --no-fund
 
 # Copia o restante do código
 COPY . .
