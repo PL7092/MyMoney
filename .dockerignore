@@ -12,7 +12,7 @@ pnpm-debug.log*
 .pnpm-debug.log*
 
 # Build outputs
-dist
+# dist - REMOVED: needed for production build
 build
 .next
 out
