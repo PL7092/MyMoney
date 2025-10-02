@@ -7,9 +7,12 @@ Write-Host "1. Parando containers existentes..." -ForegroundColor Yellow
 docker-compose down
 docker rm -f MyMoney 2>$null
 
-# 2. Remover imagens antigas
-Write-Host "2. Removendo imagens antigas..." -ForegroundColor Yellow
+# 2. Remover imagens antigas e limpar cache
+Write-Host "2. Removendo imagens antigas e limpando cache..." -ForegroundColor Yellow
 docker rmi mymoney_app 2>$null
+docker rmi mymoney-app 2>$null
+docker system prune -f
+docker builder prune -f
 
 # 3. Verificar se package.json existe no projeto
 Write-Host "3. Verificando package.json..." -ForegroundColor Yellow

@@ -11,7 +11,7 @@
     "server": "node server/server.js",
     "server:dev": "NODE_ENV=development node server/server.js",
     "server:prod": "NODE_ENV=production node server/server.js",
-    "start": "npm run server:prod",
+    "start": "node server/server.js",
     "test": "node test-complete.js",
     "test:verbose": "node test-complete.js --verbose",
     "install:auto": "node install.js",
