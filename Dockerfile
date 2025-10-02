@@ -1,4 +1,4 @@
-# ========================= 
+# =========================
 # Stage 1: Builder
 # =========================
 FROM node:20-alpine AS builder
@@ -176,17 +176,24 @@ RUN mkdir -p /app/uploads /app/config /app/logs /app/backups && \
     chmod -R 755 /app && \
     chmod -R 777 /app/uploads /app/config /app/logs /app/backups
 
-# VALIDAÇÃO FINAL: Antes de mudar para usuário não-root
+# =========================
+# VALIDAÇÃO FINAL DEFINITIVA
+# =========================
 RUN set -e; \
-    echo "=== VALIDAÇÃO FINAL: Antes de mudar para usuário não-root ==="; \
-    echo "Conteúdo final de /app:"; \
-    ls -la /app/; \
-    if [ ! -f "/app/package.json" ]; then \
-        echo "ERRO: package.json desapareceu antes de mudar usuário"; \
+    echo "=== VALIDAÇÃO FINAL DEFINITIVA: Conferindo /app e package.json ==="; \
+    if [ ! -d "/app" ]; then \
+        echo "ERRO CRÍTICO: Diretório /app não existe"; \
         exit 1; \
     fi; \
-    echo "✓ package.json confirmado antes de mudar usuário"
+    if [ ! -f "/app/package.json" ]; then \
+        echo "ERRO CRÍTICO: package.json não existe em /app"; \
+        exit 1; \
+    fi; \
+    echo "✓ Diretório /app e package.json confirmados"; \
+    echo "Conteúdo de /app:"; \
+    ls -la /app/
 
+# Muda para usuário não-root
 USER appuser
 
 # Healthcheck
