@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 /**
  * MyMoney Application Server
  * Enhanced with security, performance, and monitoring features
