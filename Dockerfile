@@ -40,7 +40,7 @@ RUN apk add --no-cache \
     gzip \
     && rm -rf /var/cache/apk/*
 
-# Copia package.json e package-lock.json para instalar runtime deps
+# Copia package.json primeiro para instalar dependências
 COPY package*.json ./
 
 # Instala apenas production dependencies
@@ -50,7 +50,7 @@ RUN npm ci --only=production --legacy-peer-deps --no-audit --no-fund \
 # Copia build do frontend
 COPY --from=builder /app/dist ./dist
 
-# Copia servidor, scripts e SQL
+# Copia servidor e scripts SQL
 COPY server ./server
 COPY sql ./sql
 
