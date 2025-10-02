@@ -29,111 +29,34 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  // Always set a default user - no authentication required
+  const [user, setUser] = useState<User | null>({
+    id: 'public-user',
+    email: 'public@mymoney.app',
+    name: 'Usuário Público'
+  });
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    // Check for stored user session
-    const checkAuth = async () => {
-      try {
-        const token = localStorage.getItem('auth_token');
-        if (token) {
-          // For Docker/MariaDB: call your backend API to verify token
-          // const response = await fetch('/api/auth/verify', {
-          //   headers: { Authorization: `Bearer ${token}` }
-          // });
-          // if (response.ok) {
-          //   const userData = await response.json();
-          //   setUser(userData);
-          // }
-          
-          // Temporary mock user for development
-          setUser({
-            id: '1',
-            email: 'user@example.com',
-            name: 'Usuario Demo'
-          });
-        }
-      } catch (error) {
-        console.error('Auth check failed:', error);
-        localStorage.removeItem('auth_token');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkAuth();
+    // No authentication check needed - user is always "logged in"
+    // This allows the app to function without requiring login
   }, []);
 
   const login = async (email: string, password: string) => {
-    setIsLoading(true);
-    try {
-      // For Docker/MariaDB: call your backend API
-      // const response = await fetch('/api/auth/login', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ email, password })
-      // });
-      
-      // if (!response.ok) {
-      //   throw new Error('Login failed');
-      // }
-      
-      // const { user: userData, token } = await response.json();
-      // localStorage.setItem('auth_token', token);
-      // setUser(userData);
-
-      // Temporary mock login for development
-      localStorage.setItem('auth_token', 'mock_token');
-      setUser({
-        id: '1',
-        email,
-        name: 'Usuario Demo'
-      });
-    } catch (error) {
-      console.error('Login error:', error);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
+    // No login required - user is always authenticated
+    // This is a no-op function to maintain compatibility
+    return Promise.resolve();
   };
 
   const register = async (email: string, password: string, name: string) => {
-    setIsLoading(true);
-    try {
-      // For Docker/MariaDB: call your backend API
-      // const response = await fetch('/api/auth/register', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ email, password, name })
-      // });
-      
-      // if (!response.ok) {
-      //   throw new Error('Registration failed');
-      // }
-      
-      // const { user: userData, token } = await response.json();
-      // localStorage.setItem('auth_token', token);
-      // setUser(userData);
-
-      // Temporary mock registration for development
-      localStorage.setItem('auth_token', 'mock_token');
-      setUser({
-        id: '1',
-        email,
-        name
-      });
-    } catch (error) {
-      console.error('Registration error:', error);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
+    // No registration required - user is always authenticated
+    // This is a no-op function to maintain compatibility
+    return Promise.resolve();
   };
 
   const logout = () => {
-    localStorage.removeItem('auth_token');
-    setUser(null);
+    // No logout required - user remains authenticated
+    // This is a no-op function to maintain compatibility
   };
 
   const value = {

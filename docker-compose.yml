@@ -6,31 +6,89 @@ services:
     container_name: personal-finance-db
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword123}
-      MYSQL_DATABASE: ${DB_NAME:-personal_finance}
-      MYSQL_USER: ${DB_USER:-finance_user}
-      MYSQL_PASSWORD: ${DB_PASSWORD:-finance_user_password_2024}
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword123}
+      MARIADB_DATABASE: ${DB_NAME:-personal_finance}
+      MARIADB_USER: ${DB_USER:-finance_user}
+      MARIADB_PASSWORD: ${DB_PASSWORD:-finance_user_password_2024}
+      MARIADB_CHARSET: utf8mb4
+      MARIADB_COLLATION: utf8mb4_unicode_ci
+      MARIADB_INNODB_BUFFER_POOL_SIZE: 256M
+      MARIADB_INNODB_LOG_FILE_SIZE: 64M
+      MARIADB_MAX_CONNECTIONS: 100
+      MARIADB_QUERY_CACHE_SIZE: 32M
+      MARIADB_AUTO_UPGRADE: 1
+      MARIADB_DISABLE_UPGRADE_BACKUP: 1
     volumes:
       - mariadb_data:/var/lib/mysql
-      - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+      - ./sql/my.cnf:/etc/mysql/conf.d/custom.cnf:ro
+      - ./sql/backup:/backup
     ports:
       - "${DB_PORT:-3306}:3306"
     networks:
       - finance-network
     healthcheck:
-      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
-      start_period: 1m
+      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD:-rootpassword123}"]
+      start_period: 60s
       start_interval: 10s
-      interval: 1m
-      timeout: 5s
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    security_opt:
+      - no-new-privileges:true
+    read_only: false
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+      - /var/run/mysqld:noexec,nosuid,size=100m
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  redis:
+    image: redis:7-alpine
+    container_name: personal-finance-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru --requirepass ${REDIS_PASSWORD:-redis_password_2024}
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-redis_password_2024}
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - finance-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-redis_password_2024}", "ping"]
+      interval: 30s
+      timeout: 10s
       retries: 3
+      start_period: 30s
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.25'
+        reservations:
+          memory: 128M
+          cpus: '0.1'
 
   app:
-    build: .
-    container_name: personal-finance-app
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: MyMoney
     restart: unless-stopped
     depends_on:
       mariadb:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     environment:
       - NODE_ENV=production
@@ -40,21 +98,71 @@ services:
       - DB_USER=${DB_USER:-finance_user}
       - DB_PASSWORD=${DB_PASSWORD:-finance_user_password_2024}
       - DB_SSL=false
-      - APP_PORT=${APP_PORT:-3000}
-      - JWT_SECRET=${JWT_SECRET:-your_jwt_secret_change_this_in_production}
+      - APP_PORT=${APP_PORT:-3001}
+      - JWT_SECRET=${JWT_SECRET:-your_super_secure_jwt_secret_key_here_minimum_32_characters}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-your_super_secure_refresh_secret_key_here_minimum_32_characters}
+      - JWT_EXPIRES_IN=15m
+      - JWT_REFRESH_EXPIRES_IN=7d
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-redis_password_2024}@redis:6379
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-redis_password_2024}
+      - BCRYPT_ROUNDS=12
+      - RATE_LIMIT_WINDOW_MS=900000
+      - RATE_LIMIT_MAX_REQUESTS=100
+      - AUTH_RATE_LIMIT_MAX=5
+      - STRICT_RATE_LIMIT_MAX=10
+      - BACKUP_DIR=/app/backups
+      - BACKUP_RETENTION_DAYS=30
+      - LOG_LEVEL=info
+      - LOG_DIR=/app/logs
+      - CACHE_TTL_DEFAULT=300
+      - NODE_OPTIONS=--max-old-space-size=512
+      - UPLOAD_DIR=/app/uploads
+      - MAX_FILE_SIZE=10485760
+      - API_TIMEOUT=30000
+      - ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3001
     ports:
-      - "${APP_PORT:-3000}:3000"
+      - "${APP_PORT:-3001}:3001"
     networks:
       - finance-network
+    volumes:
+      - app_uploads:/app/uploads
+      - app_config:/app/config
+      - app_logs:/app/logs
+      - app_backups:/app/backups
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/api/health"]
       interval: 30s
       timeout: 10s
       retries: 5
       start_period: 60s
+    security_opt:
+      - no-new-privileges:true
+    read_only: false
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
 
 volumes:
   mariadb_data:
+    driver: local
+  redis_data:
+    driver: local
+  app_uploads:
+    driver: local
+  app_config:
+    driver: local
+  app_logs:
+    driver: local
+  app_backups:
     driver: local
 
 networks:
