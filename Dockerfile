@@ -1,4 +1,4 @@
-# =========================
+# ========================= 
 # Stage 1: Builder
 # =========================
 FROM node:20-alpine AS builder
@@ -117,61 +117,40 @@ RUN set -e; \
     ls -la /app/ || echo "Diretório /app vazio"; \
     echo "✓ /app ainda existe após instalar dependências do sistema"
 
-# Copia package.json
-COPY package.json ./
+# Copia package.json e node_modules do builder
+COPY --from=builder /app/package.json ./ 
+COPY --from=builder /app/node_modules ./node_modules
 
-# VALIDAÇÃO 9: Após copiar package.json no production
+# VALIDAÇÃO 9: Após copiar package.json e node_modules no production
 RUN set -e; \
-    echo "=== VALIDAÇÃO 9: Após copiar package.json no production ==="; \
+    echo "=== VALIDAÇÃO 9: Após copiar package.json e node_modules no production ==="; \
     echo "Conteúdo de /app:"; \
     ls -la /app/; \
     if [ ! -f "/app/package.json" ]; then \
         echo "ERRO CRÍTICO: package.json não foi copiado para /app no stage production"; \
-        echo "Tentando criar package.json de emergência..."; \
-        echo '{"name":"mymoney","version":"1.0.0","main":"server/server.js","scripts":{"start":"node server/server.js"},"dependencies":{"express":"^4.18.0","cors":"^2.8.5","dotenv":"^16.0.0","mysql2":"^3.0.0"}}' > /app/package.json; \
-        if [ ! -f "/app/package.json" ]; then \
-            echo "FALHA TOTAL: Não foi possível criar package.json"; \
-            exit 1; \
-        fi; \
-        echo "✓ package.json de emergência criado"; \
-    else \
-        echo "✓ package.json confirmado em /app no stage production"; \
+        exit 1; \
     fi; \
+    echo "✓ package.json confirmado em /app no stage production"; \
     echo "Tamanho do arquivo:"; \
     wc -c /app/package.json; \
     echo "Conteúdo do package.json:"; \
     head -10 /app/package.json
 
-# VALIDAÇÃO 10: Antes do npm install
+# VALIDAÇÃO 10: Antes do npm install (removido, pois não vamos rodar npm install no production)
 RUN set -e; \
-    echo "=== VALIDAÇÃO 10: Antes do npm install ==="; \
+    echo "=== VALIDAÇÃO 10: Verificação final antes de usar node_modules do builder ==="; \
     if [ ! -f "/app/package.json" ]; then \
         echo "VERIFICAÇÃO FINAL FALHOU: package.json não existe"; \
         exit 1; \
     fi; \
-    if [ ! -s "/app/package.json" ]; then \
-        echo "VERIFICAÇÃO FINAL FALHOU: package.json está vazio"; \
+    if [ ! -d "/app/node_modules" ]; then \
+        echo "VERIFICAÇÃO FINAL FALHOU: node_modules não existe"; \
         exit 1; \
     fi; \
-    echo "✓ Verificação final aprovada - package.json existe e não está vazio"; \
+    echo "✓ package.json e node_modules presentes"; \
     echo "Diretório atual: $(pwd)"; \
     echo "Conteúdo completo de /app:"; \
     ls -la /app/
-
-# Instala apenas production dependencies
-RUN npm install --omit=dev --legacy-peer-deps --no-audit --no-fund && \
-    npm cache clean --force
-
-# VALIDAÇÃO 11: Após npm install no production
-RUN set -e; \
-    echo "=== VALIDAÇÃO 11: Após npm install no production ==="; \
-    echo "Conteúdo de /app:"; \
-    ls -la /app/; \
-    if [ ! -f "/app/package.json" ]; then \
-        echo "ERRO: package.json desapareceu após npm install no production"; \
-        exit 1; \
-    fi; \
-    echo "✓ package.json ainda existe após npm install no production"
 
 # Copia build e arquivos necessários
 COPY --from=builder /app/dist ./dist
