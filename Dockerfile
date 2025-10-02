@@ -1,33 +1,37 @@
-# Multi-stage build for production deployment
+# =========================
+# Stage 1: Builder
+# =========================
 FROM node:20-alpine AS builder
 
+# Diretório de trabalho
 WORKDIR /app
 
-# Install build dependencies
+# Instala ferramentas de build
 RUN apk add --no-cache python3 make g++
 
-# Copy package files
+# Copia apenas os arquivos de dependências primeiro
 COPY package*.json ./
 
-# Install ALL deps (including devDependencies) for build
+# Instala todas as dependências (dev + prod)
 RUN npm ci --legacy-peer-deps --no-audit --no-fund
 
-# Copy source code
+# Copia o restante do código
 COPY . .
 
-# Build the React application
+# Build da aplicação React (assumindo que seja frontend)
 RUN npm run build
 
-# Remove dev dependencies and clean cache
+# Remove devDependencies e limpa cache
 RUN npm prune --production && npm cache clean --force
 
-
-# Production stage
+# =========================
+# Stage 2: Production
+# =========================
 FROM node:20-alpine AS production
 
 WORKDIR /app
 
-# Install runtime dependencies including MariaDB client for backups
+# Instala runtime dependencies necessárias
 RUN apk add --no-cache \
     wget \
     curl \
@@ -36,43 +40,36 @@ RUN apk add --no-cache \
     gzip \
     && rm -rf /var/cache/apk/*
 
-# Copy package.json to install runtime dependencies
+# Copia package.json e package-lock.json para instalar runtime deps
 COPY package*.json ./
 
-# Install only production dependencies
+# Instala apenas production dependencies
 RUN npm ci --only=production --legacy-peer-deps --no-audit --no-fund \
     && npm cache clean --force
 
-# Copy build output from builder stage
+# Copia build do frontend
 COPY --from=builder /app/dist ./dist
 
-# Copy server files and ensure package.json is preserved
+# Copia servidor, scripts e SQL
 COPY server ./server
 COPY sql ./sql
 
-# Ensure package.json is available (copy again to be safe)
-COPY package*.json ./
-
-# Ensure folders exist with proper permissions
-RUN mkdir -p /app/uploads /app/config /app/logs /app/backups
-
-# Create non-root user with specific UID/GID
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S appuser -u 1001 -G nodejs
-
-# Set proper ownership
-RUN chown -R appuser:nodejs /app && \
-    chmod -R 755 /app && \
-    chmod -R 777 /app/uploads /app/config /app/logs /app/backups
+# Garante diretórios com permissões corretas
+RUN mkdir -p /app/uploads /app/config /app/logs /app/backups \
+    && addgroup -g 1001 -S nodejs \
+    && adduser -S appuser -u 1001 -G nodejs \
+    && chown -R appuser:nodejs /app \
+    && chmod -R 755 /app \
+    && chmod -R 777 /app/uploads /app/config /app/logs /app/backups
 
 USER appuser
 
-# Add health check
+# Healthcheck
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:3001/api/health || exit 1
 
 EXPOSE 3001
 
-# Use dumb-init for proper signal handling
+# Entrypoint com dumb-init
 ENTRYPOINT ["dumb-init", "--"]
 CMD ["node", "server/server.js"]
