@@ -3,8 +3,8 @@
  * Tests all services for syntax errors and logical issues without execution
  */
 
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
 
 class ServiceValidator {
   constructor() {
@@ -414,11 +414,11 @@ async function main() {
   process.exit(report.errors.length > 0 ? 1 : 0);
 }
 
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   main().catch(error => {
     console.error('Validation failed:', error);
     process.exit(1);
   });
 }
 
-module.exports = ServiceValidator;
+export default ServiceValidator;

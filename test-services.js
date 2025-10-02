@@ -1,7 +1,7 @@
-const { DatabaseService } = require('./server/db-commonjs');
-const { logger } = require('./server/services/LoggerService');
-const { cache } = require('./server/services/CacheService');
-const { backup } = require('./server/services/BackupService');
+import { DatabaseService } from './server/db-commonjs.js';
+import { logger } from './server/services/LoggerService.js';
+import { cache } from './server/services/CacheService.js';
+import { backup } from './server/services/BackupService.js';
 
 async function testServices() {
   console.log('🧪 Testando serviços...\n');

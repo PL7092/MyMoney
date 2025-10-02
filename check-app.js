@@ -1,6 +1,6 @@
-const fs = require('fs');
-const path = require('path');
-const { execSync } = require('child_process');
+import fs from 'fs';
+import path from 'path';
+import { execSync } from 'child_process';
 
 console.log('=================================');
 console.log('MyMoney Application Check');
@@ -67,49 +67,57 @@ if (missingFiles.length > 0) {
     console.log('✅ All server files found');
 }
 
-// Try to load the main services
-try {
-    console.log('🔍 Testing service loading...');
-    
-    // Set minimal environment for testing
-    process.env.NODE_ENV = 'test';
-    process.env.JWT_SECRET = 'test-secret';
-    process.env.DB_HOST = 'localhost';
-    process.env.DB_USER = 'test';
-    process.env.DB_PASSWORD = 'test';
-    process.env.DB_NAME = 'test';
-    
-    const LoggerService = require('./server/services/LoggerService');
-    console.log('  ✅ LoggerService loaded');
-    
-    const CacheService = require('./server/services/CacheService');
-    console.log('  ✅ CacheService loaded');
-    
-    const HealthCheckService = require('./server/services/HealthCheckService');
-    console.log('  ✅ HealthCheckService loaded');
-    
-    const DatabaseInitService = require('./server/services/DatabaseInitService');
-    console.log('  ✅ DatabaseInitService loaded');
-    
-    console.log('✅ All services loaded successfully');
-    
-} catch (error) {
-    console.error('❌ Service loading failed:', error.message);
-    console.error('Stack trace:', error.stack);
-    process.exit(1);
+async function checkServices() {
+    // Try to load the main services
+    try {
+        console.log('🔍 Testing service loading...');
+        
+        // Set minimal environment for testing
+        process.env.NODE_ENV = 'test';
+        process.env.JWT_SECRET = 'test-secret';
+        process.env.DB_HOST = 'localhost';
+        process.env.DB_USER = 'test';
+        process.env.DB_PASSWORD = 'test';
+        process.env.DB_NAME = 'test';
+        
+        await import('./server/services/LoggerService.js');
+        console.log('  ✅ LoggerService loaded');
+        
+        await import('./server/services/CacheService.js');
+        console.log('  ✅ CacheService loaded');
+        
+        await import('./server/services/HealthCheckService.js');
+        console.log('  ✅ HealthCheckService loaded');
+        
+        await import('./server/services/DatabaseInitService.js');
+        console.log('  ✅ DatabaseInitService loaded');
+        
+        console.log('✅ All services loaded successfully');
+        
+    } catch (error) {
+        console.error('❌ Service loading failed:', error.message);
+        console.error('Stack trace:', error.stack);
+        process.exit(1);
+    }
+
+    console.log('\n=================================');
+    console.log('✅ Application check completed successfully!');
+    console.log('=================================');
+
+    console.log('\nNext steps:');
+    console.log('1. Configure your .env file with proper database settings');
+    console.log('2. Start the server: npm run server:dev');
+    console.log('3. Access the application at http://localhost:3000');
+
+    console.log('\nAvailable scripts:');
+    console.log('- npm run server:dev    (Development mode)');
+    console.log('- npm run server:prod   (Production mode)');
+    console.log('- npm run health        (Check system health)');
+    console.log('- npm run db:status     (Check database status)');
 }
 
-console.log('\n=================================');
-console.log('✅ Application check completed successfully!');
-console.log('=================================');
-
-console.log('\nNext steps:');
-console.log('1. Configure your .env file with proper database settings');
-console.log('2. Start the server: npm run server:dev');
-console.log('3. Access the application at http://localhost:3000');
-
-console.log('\nAvailable scripts:');
-console.log('- npm run server:dev    (Development mode)');
-console.log('- npm run server:prod   (Production mode)');
-console.log('- npm run health        (Check system health)');
-console.log('- npm run db:status     (Check database status)');
+// Run the check
+checkServices().catch(error => {
+    console.error('❌ Application check failed:', error);
+    process.exit(1);
+});

@@ -7,9 +7,9 @@
  * Inclui verificações de dependências, serviços e funcionalidades
  */
 
-const fs = require('fs');
-const path = require('path');
-const { spawn } = require('child_process');
+import fs from 'fs';
+import path from 'path';
+import { spawn } from 'child_process';
 
 // Cores para output no terminal
 const colors = {
@@ -220,7 +220,7 @@ class TestRunner {
 
       // Testar LoggerService
       try {
-        const { logger } = require('./server/services/LoggerService');
+        const { logger } = await import('./server/services/LoggerService.js');
         logger.info('Logger service test');
         this.success('LoggerService loaded successfully');
         this.addResult('logger_service', true, 'Service loaded and functional');
@@ -231,7 +231,7 @@ class TestRunner {
 
       // Testar CacheService
       try {
-        const { cache } = require('./server/services/CacheService');
+        const { cache } = await import('./server/services/CacheService.js');
         await cache.set('test_key', 'test_value', 10);
         const value = await cache.get('test_key');
         
@@ -249,7 +249,7 @@ class TestRunner {
 
       // Testar DatabaseService (sem conexão real)
       try {
-        const { DatabaseService } = require('./server/db-commonjs');
+        const { DatabaseService } = await import('./server/db-commonjs.js');
         const db = new DatabaseService();
         this.success('DatabaseService loaded successfully');
         this.addResult('database_service', true, 'Service loaded (connection not tested)');
@@ -260,7 +260,7 @@ class TestRunner {
 
       // Testar HealthCheckService
       try {
-        const { healthCheck } = require('./server/services/HealthCheckService');
+        const { healthCheck } = await import('./server/services/HealthCheckService.js');
         await healthCheck.init();
         this.success('HealthCheckService loaded successfully');
         this.addResult('health_service', true, 'Service loaded and initialized');
@@ -283,7 +283,7 @@ class TestRunner {
       this.info('Testing Express app loading...');
       
       // Tentar carregar a aplicação
-      const app = require('./server/app');
+      const { default: app } = await import('./server/app.js');
       
       if (app && typeof app.listen === 'function') {
         this.success('Express application loaded successfully');
@@ -304,7 +304,7 @@ class TestRunner {
   // Verificar portas disponíveis
   async checkPortAvailability() {
     try {
-      const net = require('net');
+      const { default: net } = await import('net');
       const port = process.env.PORT || 3000;
       
       return new Promise((resolve) => {
@@ -437,7 +437,7 @@ class TestRunner {
 }
 
 // Executar testes se este arquivo for executado diretamente
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   const runner = new TestRunner();
   runner.runAllTests().catch(error => {
     console.error('Test runner crashed:', error);
@@ -445,4 +445,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = TestRunner;
+export default TestRunner;

@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-const { execSync, spawn } = require('child_process');
-const fs = require('fs');
-const path = require('path');
+import { execSync, spawn } from 'child_process';
+import fs from 'fs';
+import path from 'path';
 
 class AutoInstaller {
   constructor() {
@@ -100,7 +100,7 @@ class AutoInstaller {
     
     // Verificar se Redis está disponível
     try {
-      const redis = require('redis');
+      const { default: redis } = await import('redis');
       const client = redis.createClient({
         url: process.env.REDIS_URL || 'redis://localhost:6379',
         socket: {
@@ -118,7 +118,7 @@ class AutoInstaller {
 
     // Verificar se MariaDB/MySQL está disponível
     try {
-      const mysql = require('mysql2/promise');
+      const { default: mysql } = await import('mysql2/promise');
       const connection = await mysql.createConnection({
         host: process.env.DB_HOST || 'localhost',
         port: process.env.DB_PORT || 3306,
@@ -140,14 +140,14 @@ class AutoInstaller {
     
     try {
       // Teste simples de importação dos serviços
-      const { logger } = require('./server/services/LoggerService');
+      const { logger } = await import('./server/services/LoggerService.js');
       logger.info('Teste do LoggerService');
       this.log('LoggerService ✓', 'success');
 
-      const { cache } = require('./server/services/CacheService');
+      const { cache } = await import('./server/services/CacheService.js');
       this.log('CacheService ✓', 'success');
 
-      const { backup } = require('./server/services/BackupService');
+      const { backup } = await import('./server/services/BackupService.js');
       this.log('BackupService ✓', 'success');
 
       this.log('Todos os serviços carregados com sucesso!', 'success');
@@ -183,9 +183,9 @@ class AutoInstaller {
 }
 
 // Executar instalação se chamado diretamente
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   const installer = new AutoInstaller();
   installer.install();
 }
 
-module.exports = AutoInstaller;
+export default AutoInstaller;

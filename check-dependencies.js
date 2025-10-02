@@ -3,8 +3,8 @@
  * Verifica compatibilidade de versões e dependências
  */
 
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
 
 class DependencyChecker {
   constructor() {
@@ -488,11 +488,11 @@ async function main() {
   process.exit(report.status === 'PASSED' ? 0 : 1);
 }
 
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   main().catch(error => {
     console.error('❌ Dependency check failed:', error);
     process.exit(1);
   });
 }
 
-module.exports = DependencyChecker;
+export default DependencyChecker;
