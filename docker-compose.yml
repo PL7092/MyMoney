@@ -140,7 +140,7 @@ services:
       - "NOME_CONTAINER_MARIADB:mariadb"
       - "NOME_CONTAINER_REDIS:redis"
     volumes:
-      - .:/app
+      # Removido - .:/app (estava a sobrescrever os ficheiros do container)
       - app_uploads:/app/uploads
       - app_config:/app/config
       - app_logs:/app/logs
