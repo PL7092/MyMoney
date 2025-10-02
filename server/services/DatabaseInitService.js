@@ -2,10 +2,13 @@ import { logger } from './LoggerService.js';
 import { DatabaseService } from '../db-commonjs.js';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import mysql from 'mysql2/promise';
 
 class DatabaseInitService {
   constructor() {
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
     this.db = new DatabaseService();
     this.schemaVersion = '1.0.0';
     this.migrationPath = path.join(__dirname, '..', 'migrations');

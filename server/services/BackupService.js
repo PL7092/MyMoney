@@ -2,6 +2,7 @@ import cron from 'node-cron';
 import { exec } from 'child_process';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import { promisify } from 'util';
 import { logger } from './LoggerService.js';
 
@@ -9,6 +10,8 @@ const execAsync = promisify(exec);
 
 class BackupService {
   constructor() {
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
     this.backupDir = process.env.BACKUP_DIR || path.join(__dirname, '../../backups');
     this.dbConfig = {
       host: process.env.DB_HOST || 'localhost',

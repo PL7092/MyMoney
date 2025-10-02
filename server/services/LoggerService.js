@@ -1,9 +1,12 @@
 import winston from 'winston';
 import path from 'path';
 import fs from 'fs';
+import { fileURLToPath } from 'url';
 
 class LoggerService {
   constructor() {
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
     this.logsDir = process.env.LOGS_DIR || path.join(__dirname, '../../logs');
     this.ensureLogsDirectory();
     this.logger = this.createLogger();
