@@ -171,6 +171,7 @@ class LoggerService {
 
   // Middleware para Express
   expressMiddleware() {
+    const loggerInstance = this; // Capture the logger instance
     return (req, res, next) => {
       const startTime = Date.now();
       const originalSend = res.send;
@@ -191,13 +192,13 @@ class LoggerService {
 
         if (res.statusCode >= 400) {
           logData.responseBody = data?.substring(0, 500);
-          this.logger.warn('HTTP_ERROR', logData);
+          loggerInstance.logger.warn('HTTP_ERROR', logData);
         } else {
-          this.logger.info('HTTP_REQUEST', logData);
+          loggerInstance.logger.info('HTTP_REQUEST', logData);
         }
 
         originalSend.call(this, data);
-      }.bind(this);
+      };
 
       next();
     };
