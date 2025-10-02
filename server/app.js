@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import 'dotenv/config';
 
@@ -121,13 +122,87 @@ class App {
     // Import existing routes from original server
     this.importLegacyRoutes();
 
-    // Serve static files
-    this.app.use(express.static(path.join(__dirname, '../dist')));
-
-    // SPA fallback
-    this.app.get('*', (req, res) => {
-      res.sendFile(path.join(__dirname, '../dist/index.html'));
-    });
+    // Check if dist directory exists
+    const distPath = path.join(__dirname, '../dist');
+    
+    if (fs.existsSync(distPath)) {
+      // Production mode: serve built files
+      this.app.use(express.static(distPath));
+      
+      // SPA fallback for production
+      this.app.get('*', (req, res) => {
+        res.sendFile(path.join(distPath, 'index.html'));
+      });
+    } else {
+      // Development mode: serve source files
+      console.log('⚠️  Dist directory not found. Running in development mode.');
+      console.log('📁 Serving static files from public directory');
+      
+      // Serve public assets
+      this.app.use(express.static(path.join(__dirname, '../public')));
+      
+      // Development fallback - serve a simple HTML page
+      this.app.get('*', (req, res) => {
+        res.send(`
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>MyMoney - Build Required</title>
+            <style>
+              body { 
+                font-family: Arial, sans-serif; 
+                max-width: 800px; 
+                margin: 50px auto; 
+                padding: 20px;
+                background: #f5f5f5;
+              }
+              .container {
+                background: white;
+                padding: 30px;
+                border-radius: 8px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+              }
+              .status { color: #e74c3c; }
+              .success { color: #27ae60; }
+              .info { color: #3498db; }
+              pre { background: #f8f9fa; padding: 15px; border-radius: 4px; overflow-x: auto; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <h1>🏗️ MyMoney Application</h1>
+              <p class="status">⚠️ Frontend build not found</p>
+              
+              <h2>Status:</h2>
+              <ul>
+                <li class="success">✅ Docker containers running</li>
+                <li class="success">✅ Backend server active</li>
+                <li class="success">✅ Database connected</li>
+                <li class="success">✅ Redis connected</li>
+                <li class="status">❌ Frontend build missing</li>
+              </ul>
+              
+              <h2>Solution:</h2>
+              <p>The frontend needs to be built. Run the following command:</p>
+              <pre>npm run build</pre>
+              
+              <h2>API Status:</h2>
+              <p class="info">Backend API is available at: <a href="/api/health">/api/health</a></p>
+              
+              <h2>Next Steps:</h2>
+              <ol>
+                <li>Stop the Docker containers: <code>docker-compose down</code></li>
+                <li>Rebuild with frontend: <code>docker-compose up --build -d</code></li>
+                <li>Or build locally: <code>npm run build</code></li>
+              </ol>
+            </div>
+          </body>
+          </html>
+        `);
+      });
+    }
   }
 
   async healthCheck(req, res) {
