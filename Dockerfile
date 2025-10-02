@@ -40,11 +40,11 @@ RUN apk add --no-cache \
     gzip \
     && rm -rf /var/cache/apk/*
 
-# Copia package.json primeiro para instalar dependências
-COPY package*.json ./
+# Copia apenas package.json para instalar dependências
+COPY package.json ./
 
-# Instala apenas production dependencies
-RUN npm ci --only=production --legacy-peer-deps --no-audit --no-fund \
+# Instala apenas production dependencies (sem lock file para evitar conflitos)
+RUN npm install --omit=dev --legacy-peer-deps --no-audit --no-fund \
     && npm cache clean --force
 
 # Copia build do frontend
