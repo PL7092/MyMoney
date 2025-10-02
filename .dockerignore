@@ -1,3 +1,8 @@
+# CRITICAL: NEVER EXCLUDE THESE FILES/DIRECTORIES
+!package.json
+!app/
+!/app/
+
 # Dependencies
 node_modules
 npm-debug.log*
