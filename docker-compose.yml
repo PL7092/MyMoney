@@ -91,7 +91,7 @@ services:
   app:
     build: .
     container_name: MyMoney
-    restart: unless-stopped
+    # restart: unless-stopped  # Comentado temporariamente para debug
     # depends_on: # Comentado - usando containers externos
     #   redis:
     #     condition: service_healthy

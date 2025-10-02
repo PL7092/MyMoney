@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: MyMoney-Debug
+    # Sem restart automático para debug
+    environment:
+      - NODE_ENV=development
+      - DB_HOST=mariadb
+      - DB_PORT=3306
+      - DB_NAME=mymoney
+      - DB_USER=finance_user
+      - DB_PASSWORD=finance_user_password_2024
+      - DB_SSL=false
+      - APP_PORT=3001
+      - JWT_SECRET=your_super_secure_jwt_secret_key_here_minimum_32_characters
+      - JWT_REFRESH_SECRET=your_super_secure_refresh_secret_key_here_minimum_32_characters
+      - JWT_EXPIRES_IN=15m
+      - JWT_REFRESH_EXPIRES_IN=7d
+      - REDIS_URL=redis://:redis_password_2024@redis:6379
+      - REDIS_HOST=redis
+      - REDIS_PORT=6380
+      - REDIS_PASSWORD=redis_password_2024
+      - LOG_LEVEL=debug
+    ports:
+      - "3001:3001"
+    external_links:
+      - "mariadb:mariadb"  # Substitua 'mariadb' pelo nome real do container MariaDB
+      - "redis:redis"      # Substitua 'redis' pelo nome real do container Redis
+    networks:
+      - default
+
+networks:
+  default:
+    external: true
+    name: bridge
