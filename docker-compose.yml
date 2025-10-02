@@ -89,10 +89,8 @@ services:
   #         cpus: '0.1'
 
   app:
-    image: node:20-alpine
+    build: .
     container_name: MyMoney
-    working_dir: /app
-    command: sh -c "npm install --production && npm start"
     restart: unless-stopped
     # depends_on: # Comentado - usando containers externos
     #   redis:
