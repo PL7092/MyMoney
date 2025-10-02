@@ -1,6 +1,6 @@
-const mysql = require('mysql2/promise');
-const fs = require('fs').promises;
-const path = require('path');
+import mysql from 'mysql2/promise';
+import { promises as fs } from 'fs';
+import path from 'path';
 
 class DatabaseService {
   constructor() {
@@ -305,4 +305,4 @@ class DatabaseService {
   }
 }
 
-module.exports = DatabaseService;
+export default DatabaseService;

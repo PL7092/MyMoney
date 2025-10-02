@@ -1,7 +1,7 @@
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
-const crypto = require('crypto-js');
-const { DatabaseService } = require('../db');
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
+import crypto from 'crypto-js';
+import { DatabaseService } from '../db.js';
 
 class AuthService {
   constructor() {
@@ -243,4 +243,4 @@ class AuthService {
   }
 }
 
-module.exports = { AuthService };
+export { AuthService };

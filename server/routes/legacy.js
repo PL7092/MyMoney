@@ -1,10 +1,10 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const { logger } = require('../services/LoggerService');
-const { cache } = require('../services/CacheService');
-const { validateRequest, schemas } = require('../middleware/security');
+import { logger } from '../services/LoggerService.js';
+import { cache } from '../services/CacheService.js';
+import { validateRequest, schemas } from '../middleware/security.js';
 
-const { DatabaseService } = require('../db-commonjs');
+import { DatabaseService } from '../db-commonjs.js';
 const db = new DatabaseService();
 
 // Middleware to simulate a public user for all routes (no authentication required)
@@ -587,4 +587,4 @@ router.post('/budgets', validateRequest(schemas.budget), async (req, res) => {
 // Add more routes as needed for other entities...
 // This is a comprehensive base that covers the main entities
 
-module.exports = router;
+export default router;

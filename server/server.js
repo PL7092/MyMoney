@@ -3,11 +3,11 @@
  * Enhanced with security, performance, and monitoring features
  */
 
-require('dotenv').config();
-const App = require('./app');
-const { logger } = require('./services/LoggerService');
-const { dbInit } = require('./services/DatabaseInitService');
-const { healthCheck } = require('./services/HealthCheckService');
+import 'dotenv/config';
+import App from './app.js';
+import { logger } from './services/LoggerService.js';
+import { dbInit } from './services/DatabaseInitService.js';
+import { healthCheck } from './services/HealthCheckService.js';
 
 // Validate required environment variables
 const requiredEnvVars = [
@@ -120,5 +120,3 @@ process.on('SIGTERM', () => {
 process.on('SIGINT', () => {
   logger.info('SIGINT received, shutting down gracefully');
 });
-
-module.exports = app;

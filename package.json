@@ -16,9 +16,9 @@
     "test:verbose": "node test-complete.js --verbose",
     "install:auto": "node install.js",
     "setup": "npm run install:auto && npm install",
-    "health": "node -e \"require('./server/services/HealthCheckService').healthCheck.getSystemStatus().then(s => console.log(JSON.stringify(s, null, 2)))\"",
-    "db:init": "node -e \"require('./server/services/DatabaseInitService').dbInit.initialize().then(r => console.log(r))\"",
-    "db:status": "node -e \"require('./server/services/DatabaseInitService').dbInit.getStatus().then(s => console.log(JSON.stringify(s, null, 2)))\""
+    "health": "node -e \"import('./server/services/HealthCheckService.js').then(m => m.healthCheck.getSystemStatus().then(s => console.log(JSON.stringify(s, null, 2))))\"",
+    "db:init": "node -e \"import('./server/services/DatabaseInitService.js').then(m => m.dbInit.initialize().then(r => console.log(r)))\"",
+    "db:status": "node -e \"import('./server/services/DatabaseInitService.js').then(m => m.dbInit.getStatus().then(s => console.log(JSON.stringify(s, null, 2))))\""
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

@@ -1,7 +1,8 @@
-const { logger } = require('./LoggerService');
-const { DatabaseService } = require('../db-commonjs');
-const fs = require('fs');
-const path = require('path');
+import { logger } from './LoggerService.js';
+import { DatabaseService } from '../db-commonjs.js';
+import fs from 'fs';
+import path from 'path';
+import mysql from 'mysql2/promise';
 
 class DatabaseInitService {
   constructor() {
@@ -32,7 +33,6 @@ class DatabaseInitService {
       const tempConfig = { ...tempDb.config };
       delete tempConfig.database;
       
-      const mysql = require('mysql2/promise');
       const connection = await mysql.createConnection(tempConfig);
       
       // Verificar se o banco existe
@@ -388,4 +388,4 @@ class DatabaseInitService {
 // Instância singleton
 const dbInit = new DatabaseInitService();
 
-module.exports = { dbInit, DatabaseInitService };
+export { dbInit, DatabaseInitService };

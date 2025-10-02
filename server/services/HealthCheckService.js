@@ -1,6 +1,8 @@
-const { logger } = require('./LoggerService');
-const { cache } = require('./CacheService');
-const { DatabaseService } = require('../db-commonjs');
+import { logger } from './LoggerService.js';
+import { cache } from './CacheService.js';
+import { DatabaseService } from '../db-commonjs.js';
+import fs from 'fs';
+import path from 'path';
 
 class HealthCheckService {
   constructor() {
@@ -102,8 +104,6 @@ class HealthCheckService {
 
     // Verificação de disco (logs e uploads)
     this.registerCheck('disk', async () => {
-      const fs = require('fs');
-      const path = require('path');
       
       try {
         const directories = ['logs', 'uploads', 'backups'];
@@ -352,4 +352,4 @@ class HealthCheckService {
 // Instância singleton
 const healthCheck = new HealthCheckService();
 
-module.exports = { healthCheck, HealthCheckService };
+export { healthCheck, HealthCheckService };

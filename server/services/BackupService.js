@@ -1,9 +1,9 @@
-const cron = require('node-cron');
-const { exec } = require('child_process');
-const fs = require('fs');
-const path = require('path');
-const { promisify } = require('util');
-const { logger } = require('./LoggerService');
+import cron from 'node-cron';
+import { exec } from 'child_process';
+import fs from 'fs';
+import path from 'path';
+import { promisify } from 'util';
+import { logger } from './LoggerService.js';
 
 const execAsync = promisify(exec);
 
@@ -365,4 +365,4 @@ class BackupService {
 // Singleton instance
 const backupService = new BackupService();
 
-module.exports = { BackupService, backup: backupService };
+export { BackupService, backupService as backup };

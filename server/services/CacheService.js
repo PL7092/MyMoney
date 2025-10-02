@@ -1,5 +1,5 @@
-const redis = require('redis');
-const { logger } = require('./LoggerService');
+import redis from 'redis';
+import { logger } from './LoggerService.js';
 
 class CacheService {
   constructor() {
@@ -460,4 +460,4 @@ class CacheService {
 // Singleton instance
 const cacheService = new CacheService();
 
-module.exports = { CacheService, cache: cacheService };
+export { CacheService, cacheService as cache };

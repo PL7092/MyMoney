@@ -1,6 +1,6 @@
-const winston = require('winston');
-const path = require('path');
-const fs = require('fs');
+import winston from 'winston';
+import path from 'path';
+import fs from 'fs';
 
 class LoggerService {
   constructor() {
@@ -258,4 +258,4 @@ class LoggerService {
 // Singleton instance
 const loggerService = new LoggerService();
 
-module.exports = { LoggerService, logger: loggerService };
+export { LoggerService, loggerService as logger };

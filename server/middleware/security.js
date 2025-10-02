@@ -1,7 +1,7 @@
-const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
-const Joi = require('joi');
-const compression = require('compression');
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import Joi from 'joi';
+import compression from 'compression';
 
 // Rate limiting configurations
 const createRateLimiter = (windowMs, max, message) => {
@@ -272,7 +272,7 @@ const corsSecurityCheck = (req, res, next) => {
   next();
 };
 
-module.exports = {
+export {
   helmetConfig,
   compressionConfig,
   authLimiter,

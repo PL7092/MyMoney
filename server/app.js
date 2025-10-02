@@ -1,18 +1,18 @@
-const express = require('express');
-const cors = require('cors');
-const path = require('path');
-require('dotenv').config();
+import express from 'express';
+import cors from 'cors';
+import path from 'path';
+import 'dotenv/config';
 
 // Import services
-const { AuthService } = require('./services/AuthService');
-const { logger } = require('./services/LoggerService');
-const { cache } = require('./services/CacheService');
-const { backup } = require('./services/BackupService');
-const { healthCheck } = require('./services/HealthCheckService');
-const { dbInit } = require('./services/DatabaseInitService');
+import { AuthService } from './services/AuthService.js';
+import { logger } from './services/LoggerService.js';
+import { cache } from './services/CacheService.js';
+import { backup } from './services/BackupService.js';
+import { healthCheck } from './services/HealthCheckService.js';
+import { dbInit } from './services/DatabaseInitService.js';
 
 // Import middleware
-const {
+import {
   helmetConfig,
   compressionConfig,
   authLimiter,
@@ -23,10 +23,11 @@ const {
   securityLogger,
   corsSecurityCheck,
   schemas
-} = require('./middleware/security');
+} from './middleware/security.js';
 
 // Import existing database service
-const { DatabaseService } = require('./db-commonjs');
+import { DatabaseService } from './db-commonjs.js';
+import legacyRoutes from './routes/legacy.js';
 
 class App {
   constructor() {
@@ -439,7 +440,6 @@ class App {
   importLegacyRoutes() {
     // Import routes from the original server
     // This is a placeholder - you would import the actual route handlers
-    const legacyRoutes = require('./routes/legacy');
     this.app.use('/api', legacyRoutes);
   }
 
@@ -521,4 +521,4 @@ class App {
   }
 }
 
-module.exports = App;
+export default App;
