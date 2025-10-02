@@ -1,11 +1,11 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto-js';
-import { DatabaseService } from '../db.js';
+import db from '../db.js';
 
 class AuthService {
   constructor() {
-    this.db = new DatabaseService();
+    this.db = db;
     this.jwtSecret = process.env.JWT_SECRET || this.generateSecureSecret();
     this.refreshSecret = process.env.JWT_REFRESH_SECRET || this.generateSecureSecret();
     this.tokenExpiry = process.env.JWT_EXPIRY || '15m';
