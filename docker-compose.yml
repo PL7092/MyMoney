@@ -1,14 +1,35 @@
 services:
+  redis:
+    image: redis:7-alpine
+    container_name: MyMoney-Redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - mymoney-network
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
   app:
     build: .
     container_name: MyMoney
     restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
     environment:
       - NODE_ENV=production
       - DB_HOST=192.168.1.243
       - DB_PORT=3306
-      - DB_NAME=${DB_NAME:-finances}
-      - DB_USER=${DB_USER:-PL709}
+      - DB_NAME=${DB_NAME:-mymoney}
+      - DB_USER=${DB_USER:-MyMoney}
       - DB_PASSWORD=${DB_PASSWORD:-1Tretadepassword?}
       - DB_SSL=false
       - APP_PORT=${APP_PORT:-3001}
@@ -16,10 +37,9 @@ services:
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-your_super_secure_refresh_secret_key_here_minimum_32_characters}
       - JWT_EXPIRES_IN=15m
       - JWT_REFRESH_EXPIRES_IN=7d
-      - REDIS_URL=redis://:Qwerty7890@localhost:6379
-      - REDIS_HOST=localhost
+      - REDIS_URL=redis://redis:6379
+      - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - REDIS_PASSWORD=${REDIS_PASSWORD:-Qwerty7890}
       - BCRYPT_ROUNDS=12
       - RATE_LIMIT_WINDOW_MS=900000
       - RATE_LIMIT_MAX_REQUESTS=100
@@ -66,6 +86,8 @@ services:
           cpus: '0.25'
 
 volumes:
+  redis_data:
+    driver: local
   app_uploads:
     driver: local
   app_config:
