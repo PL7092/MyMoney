@@ -1,0 +1,162 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    --background: 224 30% 99%;
+    --foreground: 224 71% 4%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 224 71% 4%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 71% 4%;
+
+    --primary: 142 76% 36%;
+    --primary-foreground: 355 25% 95%;
+
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 220 9% 46%;
+
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
+
+    --accent: 142 76% 36%;
+    --accent-foreground: 355 25% 95%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    --success: 142 76% 36%;
+    --success-foreground: 355 25% 95%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 48 96% 89%;
+
+    --info: 221 83% 53%;
+    --info-foreground: 213 31% 91%;
+
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 142 76% 36%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 224 30% 99%;
+    --sidebar-foreground: 224 71% 4%;
+    --sidebar-primary: 142 76% 36%;
+    --sidebar-primary-foreground: 355 25% 95%;
+    --sidebar-accent: 220 14% 96%;
+    --sidebar-accent-foreground: 220 9% 46%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 142 76% 36%;
+
+    /* Finance specific colors */
+    --profit: 142 76% 36%;
+    --profit-foreground: 355 25% 95%;
+    --loss: 0 84% 60%;
+    --loss-foreground: 0 0% 98%;
+    --income: 142 76% 36%;
+    --expense: 0 84% 60%;
+    --investment: 221 83% 53%;
+    --saving: 38 92% 50%;
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(142 76% 46%));
+    --gradient-profit: linear-gradient(135deg, hsl(var(--profit)), hsl(142 76% 46%));
+    --gradient-card: linear-gradient(145deg, hsl(var(--card)), hsl(220 14% 98%));
+    --gradient-sidebar: linear-gradient(180deg, hsl(var(--sidebar-background)), hsl(224 30% 96%));
+
+    /* Shadows */
+    --shadow-card: 0 4px 6px -1px hsl(220 13% 91% / 0.1), 0 2px 4px -1px hsl(220 13% 91% / 0.06);
+    --shadow-elevated: 0 10px 15px -3px hsl(220 13% 91% / 0.1), 0 4px 6px -2px hsl(220 13% 91% / 0.05);
+    --shadow-glow: 0 0 20px hsl(var(--primary) / 0.3);
+
+    /* Animation */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .dark {
+    --background: 224 71% 4%;
+    --foreground: 224 30% 99%;
+
+    --card: 224 71% 6%;
+    --card-foreground: 224 30% 99%;
+
+    --popover: 224 71% 6%;
+    --popover-foreground: 224 30% 99%;
+
+    --primary: 142 76% 36%;
+    --primary-foreground: 355 25% 95%;
+
+    --secondary: 215 25% 27%;
+    --secondary-foreground: 220 14% 96%;
+
+    --muted: 215 25% 27%;
+    --muted-foreground: 217 10% 64%;
+
+    --accent: 142 76% 36%;
+    --accent-foreground: 355 25% 95%;
+
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 0 85% 97%;
+
+    --success: 142 76% 36%;
+    --success-foreground: 355 25% 95%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 48 96% 89%;
+
+    --info: 221 83% 53%;
+    --info-foreground: 213 31% 91%;
+
+    --border: 215 25% 27%;
+    --input: 215 25% 27%;
+    --ring: 142 76% 36%;
+
+    --sidebar-background: 224 71% 4%;
+    --sidebar-foreground: 224 30% 99%;
+    --sidebar-primary: 142 76% 36%;
+    --sidebar-primary-foreground: 355 25% 95%;
+    --sidebar-accent: 215 25% 27%;
+    --sidebar-accent-foreground: 220 14% 96%;
+    --sidebar-border: 215 25% 27%;
+    --sidebar-ring: 142 76% 36%;
+
+    /* Finance specific colors - dark mode */
+    --profit: 142 76% 36%;
+    --profit-foreground: 355 25% 95%;
+    --loss: 0 63% 31%;
+    --loss-foreground: 0 85% 97%;
+    --income: 142 76% 36%;
+    --expense: 0 63% 31%;
+    --investment: 221 83% 53%;
+    --saving: 38 92% 50%;
+
+    /* Gradients - dark mode */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(142 76% 46%));
+    --gradient-profit: linear-gradient(135deg, hsl(var(--profit)), hsl(142 76% 46%));
+    --gradient-card: linear-gradient(145deg, hsl(var(--card)), hsl(215 25% 8%));
+    --gradient-sidebar: linear-gradient(180deg, hsl(var(--sidebar-background)), hsl(224 71% 6%));
+
+    /* Shadows - dark mode */
+    --shadow-card: 0 4px 6px -1px hsl(0 0% 0% / 0.1), 0 2px 4px -1px hsl(0 0% 0% / 0.06);
+    --shadow-elevated: 0 10px 15px -3px hsl(0 0% 0% / 0.1), 0 4px 6px -2px hsl(0 0% 0% / 0.05);
+    --shadow-glow: 0 0 20px hsl(var(--primary) / 0.4);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
