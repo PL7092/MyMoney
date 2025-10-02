@@ -46,22 +46,7 @@ RUN set -e; \
         echo "Usando package.json do builder"; \
     else \
         echo "Criando package.json de emergência"; \
-        cat > ./package.json << 'EOF'
-{
-  "name": "mymoney",
-  "version": "1.0.0",
-  "main": "server/server.js",
-  "scripts": {
-    "start": "node server/server.js"
-  },
-  "dependencies": {
-    "express": "^4.18.0",
-    "cors": "^2.8.5",
-    "dotenv": "^16.0.0",
-    "mysql2": "^3.0.0"
-  }
-}
-EOF
+        echo '{"name":"mymoney","version":"1.0.0","main":"server/server.js","scripts":{"start":"node server/server.js"},"dependencies":{"express":"^4.18.0","cors":"^2.8.5","dotenv":"^16.0.0","mysql2":"^3.0.0"}}' > ./package.json; \
     fi; \
     if [ ! -f "./package.json" ]; then \
         echo "ERRO CRÍTICO: package.json não foi criado"; \
