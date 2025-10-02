@@ -32,34 +32,22 @@ RUN apk add --no-cache \
     gzip \
     && rm -rf /var/cache/apk/*
 
-# Estratégia robusta: Copia package.json de múltiplas fontes e verifica
-COPY package.json ./package.json.original || true
-COPY --from=builder /app/package.json ./package.json.builder || true
+# Copia package.json diretamente do contexto
+COPY package.json ./
 
-# Script inline para garantir que package.json existe
+# Verifica se package.json existe e instala dependências
 RUN set -e; \
-    if [ -f "./package.json.original" ]; then \
-        cp ./package.json.original ./package.json; \
-        echo "Usando package.json do contexto"; \
-    elif [ -f "./package.json.builder" ]; then \
-        cp ./package.json.builder ./package.json; \
-        echo "Usando package.json do builder"; \
-    else \
+    if [ ! -f "./package.json" ]; then \
+        echo "ERRO: package.json não encontrado no contexto"; \
         echo "Criando package.json de emergência"; \
         echo '{"name":"mymoney","version":"1.0.0","main":"server/server.js","scripts":{"start":"node server/server.js"},"dependencies":{"express":"^4.18.0","cors":"^2.8.5","dotenv":"^16.0.0","mysql2":"^3.0.0"}}' > ./package.json; \
     fi; \
-    if [ ! -f "./package.json" ]; then \
-        echo "ERRO CRÍTICO: package.json não foi criado"; \
-        exit 1; \
-    fi; \
-    rm -f ./package.json.original ./package.json.builder 2>/dev/null || true
-
-# Instala apenas production dependencies
-RUN npm install --omit=dev --legacy-peer-deps --no-audit --no-fund && \
+    echo "package.json encontrado, instalando dependências..."; \
+    npm install --omit=dev --legacy-peer-deps --no-audit --no-fund && \
     npm cache clean --force
 
 # Copia build e arquivos necessários
-COPY --from=builder /app/dist ./dist 2>/dev/null || mkdir -p ./dist
+COPY --from=builder /app/dist ./dist
 COPY server ./server
 COPY sql ./sql
 
@@ -79,5 +67,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
 
 EXPOSE 3001
 
-ENTRYPOINT ["dumb-init", "--"]
-CMD ["node", "server/server.js"]
+# Comando de inicialização
+CMD ["dumb-init", "node", "server/server.js"]
