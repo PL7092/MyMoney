@@ -43,12 +43,15 @@ COPY package*.json ./
 RUN npm ci --only=production --legacy-peer-deps --no-audit --no-fund \
     && npm cache clean --force
 
-# Copy build output
+# Copy build output from builder stage
 COPY --from=builder /app/dist ./dist
 
-# Copy server files
+# Copy server files and ensure package.json is preserved
 COPY server ./server
 COPY sql ./sql
+
+# Ensure package.json is available (copy again to be safe)
+COPY package*.json ./
 
 # Ensure folders exist with proper permissions
 RUN mkdir -p /app/uploads /app/config /app/logs /app/backups
