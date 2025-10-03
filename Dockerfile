@@ -9,8 +9,8 @@ WORKDIR /app
 RUN apk add --no-cache python3 make g++
 
 # Copy package files first for better caching
-COPY package.json package-lock.json* ./
-RUN npm ci --legacy-peer-deps --no-audit --no-fund --only=production && \
+COPY package.json ./
+RUN npm install --legacy-peer-deps --no-audit --no-fund --only=production && \
     npm cache clean --force
 
 # =========================
@@ -25,7 +25,7 @@ RUN apk add --no-cache python3 make g++
 
 # Copy package files
 COPY package.json package-lock.json* ./
-RUN npm ci --legacy-peer-deps --no-audit --no-fund
+RUN npm install --legacy-peer-deps --no-audit --no-fund
 
 # Copy source code (separate layer for better caching)
 COPY src ./src
