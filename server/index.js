@@ -1161,16 +1161,7 @@ app.get('/api/entities', async (req, res) => {
 });
 
 // ========== AI RULES CRUD ==========
-app.get('/api/ai-rules', async (req, res) => {
-  try {
-    if (!db.pool) await db.createConnection();
-    // Return empty array for now - will be implemented later
-    res.json({ success: true, data: [] });
-  } catch (error) {
-    console.error('Error fetching AI rules:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
+// AI Rules endpoints are defined earlier in the file
 
 // ========== SAVINGS GOALS CRUD ==========
 app.get('/api/savings-goals', async (req, res) => {
