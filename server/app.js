@@ -557,10 +557,11 @@ class App {
       logger.info('Database initialized');
 
       // Start server
-      this.server = this.app.listen(this.port, () => {
+      this.server = this.app.listen(this.port, '0.0.0.0', () => {
         logger.info(`Server running on port ${this.port}`, {
           environment: process.env.NODE_ENV,
-          port: this.port
+          port: this.port,
+          host: '0.0.0.0'
         });
       });
 
