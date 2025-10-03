@@ -585,7 +585,7 @@ export const ImportExport: React.FC = () => {
        {showReview && uploadStatus.sessionId && (
          <SmartImportReview
            sessionId={uploadStatus.sessionId}
-           onClose={() => {
+           onCancel={() => {
              setShowReview(false);
              resetImport();
            }}
