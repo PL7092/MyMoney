@@ -269,12 +269,12 @@ export const SmartImportReview: React.FC<SmartImportReviewProps> = ({
         body: JSON.stringify({
           sessionId,
           approvedTransactions: acceptedTransactions.map(t => ({
-            date: t.date,
-            description: t.description,
-            amount: t.amount,
-            type: t.type,
-            category_id: t.aiSuggestion?.category_id || null,
-            account_id: t.aiSuggestion?.account_id || null,
+            date: t.originalData.date,
+            description: t.originalData.description,
+            amount: t.originalData.amount,
+            type: t.suggestions.type,
+            category_id: t.userChoices?.categoryId || t.suggestions.category.id,
+            account_id: t.userChoices?.accountId || null, // Note: account_id não está definido nas suggestions
             userFeedback: t.status === 'reviewed' || t.status === 'accepted'
           }))
         })

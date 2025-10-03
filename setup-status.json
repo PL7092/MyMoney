@@ -1,0 +1,17 @@
+﻿{
+    "summary":  {
+                    "failed":  4,
+                    "total":  7,
+                    "passed":  3
+                },
+    "timestamp":  "2025-10-03 11:25:24",
+    "results":  {
+                    "Node Modules":  false,
+                    "Node.js":  false,
+                    "Environment":  true,
+                    "Dependencies":  false,
+                    "Port":  true,
+                    "NPM":  false,
+                    "File Structure":  true
+                }
+}
