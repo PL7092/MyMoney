@@ -43,9 +43,44 @@ docker-compose up --build
 docker-compose up -d --build
 ```
 
-4. **Acesse a aplicação**:
+4. **Configure os Docker Secrets** (IMPORTANTE para segurança):
+```bash
+# Execute o script de configuração automática
+.\setup-secrets.ps1
+
+# Ou crie manualmente os arquivos em secrets/
+# Veja secrets/README.md para instruções detalhadas
+```
+
+5. **Acesse a aplicação**:
 - Frontend: http://localhost:3001
 - Backend API: http://localhost:3000
+
+## 🔐 Segurança com Docker Secrets
+
+Esta aplicação utiliza **Docker Secrets** para proteger informações sensíveis como passwords e chaves JWT. 
+
+### ⚠️ IMPORTANTE - Segurança
+- Os arquivos de secrets **NÃO** são commitados no Git
+- O diretório `secrets/` está no `.gitignore`
+- **NUNCA** partilhe os arquivos de secrets publicamente
+- Em produção, use serviços de gestão de secrets apropriados
+
+### Configuração Automática
+```bash
+# Execute o script para configurar todos os secrets automaticamente
+.\setup-secrets.ps1
+```
+
+### Configuração Manual
+Crie os seguintes arquivos no diretório `secrets/`:
+- `db_password.txt` - Senha do banco de dados
+- `db_root_password.txt` - Senha root do banco
+- `jwt_secret.txt` - Chave JWT (64+ caracteres)
+- `jwt_refresh_secret.txt` - Chave JWT refresh (64+ caracteres)  
+- `redis_password.txt` - Senha do Redis
+
+Consulte `secrets/README.md` para instruções detalhadas.
 
 ### Comandos Docker Compose Úteis
 
