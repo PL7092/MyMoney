@@ -1,32 +1,32 @@
 services:
-  # MariaDB interno
-  mariadb:
-    image: mariadb:10.11
-    container_name: MyMoney-MariaDB
-    restart: unless-stopped
-    environment:
-      - MYSQL_ROOT_PASSWORD_FILE=/run/secrets/db_root_password
-      - MYSQL_DATABASE=mymoney
-      - MYSQL_USER=MyMoney
-      - MYSQL_PASSWORD_FILE=/run/secrets/db_password
-      - MYSQL_CHARSET=utf8mb4
-      - MYSQL_COLLATION=utf8mb4_unicode_ci
-    secrets:
-      - db_root_password
-      - db_password
-    ports:
-      - "3306:3306"
-    networks:
-      - mymoney-network
-    volumes:
-      - mariadb_data:/var/lib/mysql
-      - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
-    healthcheck:
-      test: ["CMD", "sh", "-c", "mysqladmin ping -h localhost -u root -p$$(cat /run/secrets/db_root_password)"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 60s
+  # MariaDB externo em localhost:3306 (comentado - usando externo)
+  # mariadb:
+  #   image: mariadb:10.11
+  #   container_name: MyMoney-MariaDB
+  #   restart: unless-stopped
+  #   environment:
+  #     - MYSQL_ROOT_PASSWORD_FILE=/run/secrets/db_root_password
+  #     - MYSQL_DATABASE=mymoney
+  #     - MYSQL_USER=MyMoney
+  #     - MYSQL_PASSWORD_FILE=/run/secrets/db_password
+  #     - MYSQL_CHARSET=utf8mb4
+  #     - MYSQL_COLLATION=utf8mb4_unicode_ci
+  #   secrets:
+  #     - db_root_password
+  #     - db_password
+  #   ports:
+  #     - "3306:3306"
+  #   networks:
+  #     - mymoney-network
+  #   volumes:
+  #     - mariadb_data:/var/lib/mysql
+  #     - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+  #   healthcheck:
+  #     test: ["CMD", "sh", "-c", "mysqladmin ping -h localhost -u root -p$$(cat /run/secrets/db_root_password)"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 5
+  #     start_period: 60s
 
   redis:
     image: redis:7-alpine
@@ -58,21 +58,19 @@ services:
       - jwt_refresh_secret
       - redis_password
     depends_on:
-      mariadb:
-        condition: service_healthy
       redis:
         condition: service_healthy
     environment:
       - NODE_ENV=production
-      # Configuração MariaDB interno
-      - DB_HOST=mariadb
+      # Configuração MariaDB externo
+      - DB_HOST=host.docker.internal
       - DB_PORT=3306
       - DB_NAME=${DB_NAME:-mymoney}
       - DB_USER=${DB_USER:-MyMoney}
       - DB_PASSWORD_FILE=/run/secrets/db_password
       - DB_SSL=false
-      # Configuração MariaDB externo (comentado)
-      # - DB_HOST=192.168.1.243
+      # Configuração MariaDB interno (comentado)
+      # - DB_HOST=mariadb
       - APP_PORT=${APP_PORT:-3001}
       - JWT_SECRET_FILE=/run/secrets/jwt_secret
       - JWT_REFRESH_SECRET_FILE=/run/secrets/jwt_refresh_secret
