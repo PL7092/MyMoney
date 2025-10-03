@@ -120,6 +120,13 @@ class App {
     this.app.get('/api/system/status', this.getSystemStatus.bind(this));
     this.app.get('/api/system/logs', strictLimiter, this.getSystemLogs.bind(this));
 
+    // Database management routes
+    this.app.post('/api/db/test', this.testDatabaseConnection.bind(this));
+    this.app.post('/api/db/init', this.initializeDatabase.bind(this));
+    this.app.get('/api/db/stats', this.getDatabaseStats.bind(this));
+    this.app.post('/api/db/stats', this.getDatabaseStatsPost.bind(this));
+    this.app.post('/api/db/import', this.importDatabaseData.bind(this));
+
     // Smart Import routes
     this.app.use('/api/smart-import', smartImportRoutes);
 
@@ -517,6 +524,133 @@ class App {
     } catch (error) {
       logger.error('Failed to get system logs', error);
       res.status(500).json({ error: 'Failed to get system logs' });
+    }
+  }
+
+  // Database management methods
+  async testDatabaseConnection(req, res) {
+    try {
+      const config = req.body;
+      const result = await this.db.testConnection(config);
+      res.json(result);
+    } catch (error) {
+      logger.error('Database connection test failed', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor',
+        error: error.message
+      });
+    }
+  }
+
+  async initializeDatabase(req, res) {
+    try {
+      const bodyConfig = req.body || {};
+      const config = bodyConfig.host ? bodyConfig : {
+        host: process.env.DB_HOST === 'mariadb' ? 'localhost' : process.env.DB_HOST,
+        port: process.env.DB_PORT,
+        username: process.env.DB_USER,
+        password: process.env.DB_PASSWORD,
+        database: process.env.DB_NAME,
+        useSSL: process.env.DB_SSL === 'true'
+      };
+
+      await this.db.createConnection(config);
+      const result = await this.db.initializeSchema();
+      res.json(result);
+    } catch (error) {
+      logger.error('Failed to initialize schema', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro ao inicializar schema',
+        error: error.message
+      });
+    }
+  }
+
+  async getDatabaseStats(req, res) {
+    try {
+      if (!this.db.pool) {
+        await this.db.createConnection({
+          host: process.env.DB_HOST === 'mariadb' ? 'localhost' : process.env.DB_HOST,
+          port: process.env.DB_PORT,
+          username: process.env.DB_USER,
+          password: process.env.DB_PASSWORD,
+          database: process.env.DB_NAME,
+          useSSL: process.env.DB_SSL === 'true'
+        });
+      }
+      
+      const stats = await this.db.getTableStats();
+      res.json({
+        success: true,
+        data: stats
+      });
+    } catch (error) {
+      logger.error('Failed to get database stats', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro ao obter estatísticas',
+        error: error.message
+      });
+    }
+  }
+
+  async getDatabaseStatsPost(req, res) {
+    try {
+      const bodyConfig = req.body || {};
+      if (bodyConfig.host) {
+        await this.db.createConnection(bodyConfig);
+      } else if (!this.db.pool) {
+        await this.db.createConnection({
+          host: process.env.DB_HOST === 'mariadb' ? 'localhost' : process.env.DB_HOST,
+          port: process.env.DB_PORT,
+          username: process.env.DB_USER,
+          password: process.env.DB_PASSWORD,
+          database: process.env.DB_NAME,
+          useSSL: process.env.DB_SSL === 'true'
+        });
+      }
+
+      const stats = await this.db.getTableStats();
+      res.json({ success: true, data: stats });
+    } catch (error) {
+      logger.error('Failed to get database stats via POST', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Erro ao obter estatísticas', 
+        error: error.message 
+      });
+    }
+  }
+
+  async importDatabaseData(req, res) {
+    try {
+      const { config: bodyConfig, data } = req.body || {};
+
+      if (bodyConfig) {
+        await this.db.createConnection(bodyConfig);
+      } else if (!this.db.pool) {
+        await this.db.createConnection({
+          host: process.env.DB_HOST,
+          port: process.env.DB_PORT,
+          username: process.env.DB_USER,
+          password: process.env.DB_PASSWORD,
+          database: process.env.DB_NAME,
+          useSSL: process.env.DB_SSL === 'true'
+        });
+      }
+      
+      const payload = data || req.body;
+      const result = await this.db.importData(payload);
+      res.json(result);
+    } catch (error) {
+      logger.error('Failed to import data', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro ao importar dados',
+        error: error.message
+      });
     }
   }
 
