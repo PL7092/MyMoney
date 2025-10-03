@@ -1,16 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useFinance } from '../../contexts/FinanceContext';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { Textarea } from '../ui/textarea';
+import { Progress } from '../ui/progress';
 import { Alert, AlertDescription } from '../ui/alert';
 import { useToast } from '../ui/use-toast';
-import { Upload, Download, FileText, AlertCircle, Sparkles } from 'lucide-react';
-import { TransactionImportWizard } from './TransactionImportWizard';
-import { SmartImportUpload } from './SmartImportUpload';
+import { Upload, Download, FileText, AlertCircle, Sparkles, CheckCircle, Loader2, X } from 'lucide-react';
+import { SmartImportReview } from './SmartImportReview';
 
 interface ImportResult {
   success: boolean;
@@ -19,268 +18,268 @@ interface ImportResult {
   errors: string[];
 }
 
+interface UploadStatus {
+  status: 'idle' | 'uploading' | 'processing' | 'ai_processing' | 'completed' | 'error';
+  progress: number;
+  message: string;
+  sessionId?: string;
+  error?: string;
+}
+
 export const ImportExport: React.FC = () => {
   const { 
     transactions, budgets, accounts, categories,
     addTransaction, addBudget, addAccount 
   } = useFinance();
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const [selectedImportType, setSelectedImportType] = useState<string>('transactions');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [importResult, setImportResult] = useState<ImportResult | null>(null);
-  const [showWizard, setShowWizard] = useState(false);
-  const [showSmartImport, setShowSmartImport] = useState(false);
+  const [textData, setTextData] = useState('');
+  const [uploadMode, setUploadMode] = useState<'file' | 'text'>('file');
+  const [uploadStatus, setUploadStatus] = useState<UploadStatus>({
+    status: 'idle',
+    progress: 0,
+    message: ''
+  });
+  const [showReview, setShowReview] = useState(false);
+
+  const supportedFormats = ['.csv', '.xlsx', '.xls', '.pdf'];
+  const maxFileSize = 10 * 1024 * 1024; // 10MB
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-      setImportResult(null);
-    }
-  };
+    if (!file) return;
 
-  const parseCSV = (csvText: string): any[] => {
-    const lines = csvText.split('\n').filter(line => line.trim());
-    if (lines.length < 2) return [];
-    
-    const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
-    const data = [];
-    
-    for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
-      const row: any = {};
-      headers.forEach((header, index) => {
-        row[header] = values[index] || '';
+    // Validar formato
+    const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
+    if (!supportedFormats.includes(fileExtension)) {
+      toast({
+        title: "Formato não suportado",
+        description: `Formatos suportados: ${supportedFormats.join(', ')}`,
+        variant: "destructive"
       });
-      data.push(row);
-    }
-    
-    return data;
-  };
-
-  const importTransactions = async (data: any[]): Promise<ImportResult> => {
-    let importedCount = 0;
-    const errors: string[] = [];
-
-    for (const row of data) {
-      try {
-        // Find first available account if none specified
-        const defaultAccount = accounts[0];
-        if (!defaultAccount) {
-          errors.push('Nenhuma conta disponível para importação');
-          continue;
-        }
-
-        // Validate required fields for entity and category
-        if (!row.entity && !row.Entity) {
-          errors.push(`Linha ${importedCount + 1}: Entidade é obrigatória`);
-          continue;
-        }
-
-        if (!row.categoryId && !row.CategoryId && !row.category && !row.Category) {
-          errors.push(`Linha ${importedCount + 1}: Categoria é obrigatória`);
-          continue;
-        }
-
-        const transaction = {
-          type: (row.type || row.Type || 'expense') as 'income' | 'expense' | 'transfer',
-          amount: parseFloat(row.amount || row.Amount || '0'),
-          description: row.description || row.Description || 'Importado',
-          categoryId: row.categoryId || row.CategoryId || undefined,
-          entity: row.entity || row.Entity,
-          accountId: row.accountId || row.AccountId || defaultAccount.id,
-          date: row.date || row.Date || new Date().toISOString().split('T')[0],
-          tags: row.tags ? row.tags.split(',').map((tag: string) => tag.trim()) : [],
-        };
-
-        if (transaction.amount > 0 && transaction.description && transaction.entity && transaction.categoryId) {
-          await addTransaction(transaction);
-          importedCount++;
-        } else {
-          errors.push(`Linha ${importedCount + 1}: Dados obrigatórios em falta - ${JSON.stringify(row)}`);
-        }
-      } catch (error) {
-        errors.push(`Erro ao processar linha: ${error}`);
-      }
+      return;
     }
 
-    return {
-      success: importedCount > 0,
-      message: `${importedCount} transações importadas com sucesso`,
-      importedCount,
-      errors
-    };
-  };
-
-  const importBudgets = async (data: any[]): Promise<ImportResult> => {
-    let importedCount = 0;
-    const errors: string[] = [];
-
-    for (const row of data) {
-      try {
-        const budget = {
-          name: row.name || row.Name || 'Orçamento Importado',
-          amount: parseFloat(row.amount || row.Amount || row.limit || row.Limit || '0'),
-          period: (row.period || row.Period || 'monthly') as 'weekly' | 'monthly' | 'quarterly' | 'yearly',
-          startDate: row.startDate || row.StartDate || new Date().toISOString().split('T')[0],
-          endDate: row.endDate || row.EndDate || new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString().split('T')[0],
-          categoryId: row.categoryId || row.CategoryId || undefined,
-          isActive: true,
-          spent: 0,
-        };
-
-        if (budget.amount > 0 && budget.name) {
-          await addBudget(budget);
-          importedCount++;
-        } else {
-          errors.push(`Linha inválida: ${JSON.stringify(row)}`);
-        }
-      } catch (error) {
-        errors.push(`Erro ao processar linha: ${error}`);
-      }
+    // Validar tamanho
+    if (file.size > maxFileSize) {
+      toast({
+        title: "Ficheiro muito grande",
+        description: "O ficheiro deve ter menos de 10MB",
+        variant: "destructive"
+      });
+      return;
     }
 
-    return {
-      success: importedCount > 0,
-      message: `${importedCount} orçamentos importados com sucesso`,
-      importedCount,
-      errors
-    };
-  };
-
-  const importAccounts = async (data: any[]): Promise<ImportResult> => {
-    let importedCount = 0;
-    const errors: string[] = [];
-
-    for (const row of data) {
-      try {
-        const account = {
-          name: row.name || row.Name || 'Conta Importada',
-          type: (row.type || row.Type || 'other') as 'checking' | 'savings' | 'credit' | 'investment' | 'cash' | 'other',
-          balance: parseFloat(row.balance || row.Balance || '0'),
-          currency: row.currency || row.Currency || 'EUR',
-          bankName: row.bankName || row.BankName || undefined,
-          accountNumber: row.accountNumber || row.AccountNumber || undefined,
-          isActive: true,
-        };
-
-        if (account.name) {
-          await addAccount(account);
-          importedCount++;
-        } else {
-          errors.push(`Linha inválida: ${JSON.stringify(row)}`);
-        }
-      } catch (error) {
-        errors.push(`Erro ao processar linha: ${error}`);
-      }
-    }
-
-    return {
-      success: importedCount > 0,
-      message: `${importedCount} contas importadas com sucesso`,
-      importedCount,
-      errors
-    };
-  };
-
-  const parseExcelFile = async (file: File): Promise<any[]> => {
-    // For now, we'll show a message that Excel parsing is available
-    toast({
-      title: "Funcionalidade em Desenvolvimento",
-      description: "Suporte para XLS/XLSX será adicionado em breve. Use CSV por enquanto.",
-      variant: "destructive",
+    setSelectedFile(file);
+    setUploadStatus({
+      status: 'idle',
+      progress: 0,
+      message: `Ficheiro selecionado: ${file.name}`
     });
-    return [];
   };
 
-  const parsePDFFile = async (file: File): Promise<any[]> => {
-    // For now, we'll show a message that PDF parsing is available
-    toast({
-      title: "Funcionalidade em Desenvolvimento", 
-      description: "Suporte para PDF será adicionado em breve. Use CSV por enquanto.",
-      variant: "destructive",
-    });
-    return [];
-  };
-
-  const handleImport = async () => {
-    if (!selectedFile) {
+  const handleSmartImport = async () => {
+    if (uploadMode === 'file' && !selectedFile) {
       toast({
         title: "Erro",
-        description: "Selecione um arquivo ou cole dados para importar",
-        variant: "destructive",
+        description: "Selecione um ficheiro para importar",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (uploadMode === 'text' && !textData.trim()) {
+      toast({
+        title: "Erro", 
+        description: "Cole os dados para importar",
+        variant: "destructive"
       });
       return;
     }
 
     try {
-      let data: any[] = [];
-      const fileName = selectedFile.name.toLowerCase();
-      
-      if (fileName.endsWith('.csv') || fileName === 'pasted-data.csv') {
-        const fileContent = await selectedFile.text();
-        data = parseCSV(fileContent);
-      } else if (fileName.endsWith('.xls') || fileName.endsWith('.xlsx')) {
-        data = await parseExcelFile(selectedFile);
-        return; // Exit early as Excel parsing shows message
-      } else if (fileName.endsWith('.pdf')) {
-        data = await parsePDFFile(selectedFile);
-        return; // Exit early as PDF parsing shows message
+      if (uploadMode === 'file') {
+        await handleFileUpload();
       } else {
-        toast({
-          title: "Erro",
-          description: "Formato de arquivo não suportado",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      if (data.length === 0) {
-        toast({
-          title: "Erro",
-          description: "Arquivo CSV vazio ou inválido",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      let result: ImportResult;
-      
-      switch (selectedImportType) {
-        case 'transactions':
-          result = await importTransactions(data);
-          break;
-        case 'budgets':
-          result = await importBudgets(data);
-          break;
-        case 'accounts':
-          result = await importAccounts(data);
-          break;
-        default:
-          throw new Error('Tipo de importação não suportado');
-      }
-
-      setImportResult(result);
-      
-      if (result.success) {
-        toast({
-          title: "Sucesso",
-          description: result.message,
-        });
-      } else {
-        toast({
-          title: "Aviso",
-          description: "Importação concluída com alguns erros",
-          variant: "destructive",
-        });
+        await handleTextUpload();
       }
     } catch (error) {
-      toast({
-        title: "Erro",
-        description: `Erro durante a importação: ${error}`,
-        variant: "destructive",
+      console.error('Erro no Smart Import:', error);
+      setUploadStatus({
+        status: 'error',
+        progress: 0,
+        message: 'Erro durante a importação',
+        error: error instanceof Error ? error.message : 'Erro desconhecido'
       });
+    }
+  };
+
+  const handleFileUpload = async () => {
+    if (!selectedFile) return;
+
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+
+    try {
+      setUploadStatus({
+        status: 'uploading',
+        progress: 10,
+        message: 'A enviar ficheiro...'
+      });
+
+      const response = await fetch('/api/smart-import/upload', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erro HTTP: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.success) {
+        setUploadStatus({
+          status: 'processing',
+          progress: 50,
+          message: 'A processar ficheiro...',
+          sessionId: result.sessionId
+        });
+
+        // Aguardar processamento
+        await pollProcessingStatus(result.sessionId);
+      } else {
+        throw new Error(result.message || 'Erro no upload');
+      }
+    } catch (error) {
+      console.error('Erro no upload:', error);
+      setUploadStatus({
+        status: 'error',
+        progress: 0,
+        message: 'Erro no upload do ficheiro',
+        error: error instanceof Error ? error.message : 'Erro desconhecido'
+      });
+    }
+  };
+
+  const handleTextUpload = async () => {
+    try {
+      setUploadStatus({
+        status: 'uploading',
+        progress: 10,
+        message: 'A processar dados...'
+      });
+
+      const response = await fetch('/api/smart-import/paste', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ textData })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erro HTTP: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.success) {
+        setUploadStatus({
+          status: 'processing',
+          progress: 50,
+          message: 'A processar dados...',
+          sessionId: result.sessionId
+        });
+
+        // Aguardar processamento
+        await pollProcessingStatus(result.sessionId);
+      } else {
+        throw new Error(result.message || 'Erro no processamento');
+      }
+    } catch (error) {
+      console.error('Erro no processamento:', error);
+      setUploadStatus({
+        status: 'error',
+        progress: 0,
+        message: 'Erro no processamento dos dados',
+        error: error instanceof Error ? error.message : 'Erro desconhecido'
+      });
+    }
+  };
+
+  const pollProcessingStatus = async (sessionId: string) => {
+    const maxAttempts = 30;
+    let attempts = 0;
+
+    const poll = async () => {
+      try {
+        const response = await fetch(`/api/smart-import/status/${sessionId}`);
+        const status = await response.json();
+
+        if (status.status === 'completed') {
+          setUploadStatus({
+            status: 'completed',
+            progress: 100,
+            message: 'Processamento concluído! A rever transações...',
+            sessionId
+          });
+          setShowReview(true);
+          return;
+        }
+
+        if (status.status === 'error') {
+          throw new Error(status.error || 'Erro no processamento');
+        }
+
+        // Atualizar progresso
+        const progressMap: Record<string, number> = {
+          'parsing': 30,
+          'ai_processing': 60,
+          'enriching': 80,
+          'detecting_duplicates': 90
+        };
+
+        setUploadStatus({
+          status: status.status,
+          progress: progressMap[status.status] || 50,
+          message: status.message || 'A processar...',
+          sessionId
+        });
+
+        attempts++;
+        if (attempts < maxAttempts) {
+          setTimeout(poll, 2000);
+        } else {
+          throw new Error('Timeout no processamento');
+        }
+      } catch (error) {
+        console.error('Erro no polling:', error);
+        setUploadStatus({
+          status: 'error',
+          progress: 0,
+          message: 'Erro no processamento',
+          error: error instanceof Error ? error.message : 'Erro desconhecido'
+        });
+      }
+    };
+
+    poll();
+  };
+
+  const resetImport = () => {
+    setSelectedFile(null);
+    setTextData('');
+    setUploadStatus({
+      status: 'idle',
+      progress: 0,
+      message: ''
+    });
+    setShowReview(false);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -334,12 +333,20 @@ export const ImportExport: React.FC = () => {
     });
   };
 
-  if (showWizard) {
-    return <TransactionImportWizard onClose={() => setShowWizard(false)} />;
-  }
-
-  if (showSmartImport) {
-    return <SmartImportUpload onComplete={() => setShowSmartImport(false)} />;
+  if (showReview && uploadStatus.sessionId) {
+    return (
+      <SmartImportReview
+        sessionId={uploadStatus.sessionId}
+        onComplete={() => {
+          setShowReview(false);
+          resetImport();
+        }}
+        onCancel={() => {
+          setShowReview(false);
+          resetImport();
+        }}
+      />
+    );
   }
 
   return (
@@ -348,206 +355,248 @@ export const ImportExport: React.FC = () => {
         <h1 className="text-2xl font-bold">Importar/Exportar Dados</h1>
       </div>
 
-      <Tabs defaultValue="smart-import" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="smart-import">Smart Import</TabsTrigger>
-          <TabsTrigger value="basic-import">Importação Básica</TabsTrigger>
-          <TabsTrigger value="export">Exportação</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="smart-import" className="space-y-4">
-          <Card className="bg-gradient-card shadow-card">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                <Upload className="h-5 w-5" />
-                Smart Import
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Importação inteligente com IA ativa e pronta para uso
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Seção de Importação */}
+        <Card className="bg-gradient-card shadow-card">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-xl font-semibold flex items-center gap-2">
+              <Upload className="h-6 w-6" />
+              Importar
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Importação inteligente com IA sempre ativa - Suporte para CSV, XLS, XLSX e PDF
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Indicador de Smart AI sempre ativo */}
+            <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-green-600" />
+                <p className="text-sm text-green-700 font-medium">
+                  Smart AI Ativo
+                </p>
+              </div>
+              <p className="text-sm text-green-600 mt-1">
+                Categorização automática, detecção de duplicatas e validação inteligente
               </p>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                  <p className="text-sm text-green-700 font-medium">
-                    ✅ Smart Import Disponível
-                  </p>
-                  <p className="text-sm text-green-600 mt-1">
-                    Categorização automática e detecção de duplicatas ativas
-                  </p>
-                </div>
-                
-                <Button 
-                  onClick={() => setShowSmartImport(true)}
-                  className="w-full"
+            </div>
+
+            {/* Seletor de modo de importação */}
+            <div className="space-y-2">
+              <Label>Método de Importação</Label>
+              <div className="flex gap-2">
+                <Button
+                  variant={uploadMode === 'file' ? 'default' : 'outline'}
                   size="sm"
+                  onClick={() => setUploadMode('file')}
+                  className="flex-1"
                 >
-                  <Sparkles className="mr-2 h-4 w-4" />
-                  Iniciar Smart Import
+                  <FileText className="h-4 w-4 mr-2" />
+                  Ficheiro
+                </Button>
+                <Button
+                  variant={uploadMode === 'text' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setUploadMode('text')}
+                  className="flex-1"
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  Colar Dados
                 </Button>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+            </div>
 
-        <TabsContent value="basic-import" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Upload className="h-5 w-5" />
-                Importação Básica
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+            {/* Upload de ficheiro */}
+            {uploadMode === 'file' && (
               <div className="space-y-2">
-                <Label htmlFor="import-type">Tipo de Dados</Label>
-                <Select value={selectedImportType} onValueChange={setSelectedImportType}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="transactions">Transações</SelectItem>
-                    <SelectItem value="budgets">Orçamentos</SelectItem>
-                    <SelectItem value="accounts">Contas</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="file-upload">Arquivo</Label>
+                <Label htmlFor="file-upload">Selecionar Ficheiro</Label>
                 <Input
+                  ref={fileInputRef}
                   id="file-upload"
                   type="file"
                   accept=".csv,.xls,.xlsx,.pdf"
                   onChange={handleFileSelect}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Suporte para CSV, XLS, XLSX e PDF
+                  Formatos suportados: CSV, XLS, XLSX, PDF (máx. 10MB)
                 </p>
               </div>
+            )}
 
+            {/* Área de texto para colar dados */}
+            {uploadMode === 'text' && (
               <div className="space-y-2">
-                <Label htmlFor="paste-data">Ou cole os dados aqui</Label>
-                <div className="mb-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <p className="text-sm text-yellow-700">
-                    <strong>Campos obrigatórios:</strong> Entity (entidade) e CategoryId (categoria) são obrigatórios para todas as transações.
-                  </p>
-                </div>
-                <textarea
+                <Label htmlFor="paste-data">Colar Dados</Label>
+                <Textarea
                   id="paste-data"
-                  className="w-full min-h-32 px-3 py-2 border border-input bg-background text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 rounded-md resize-none"
                   placeholder="Cole aqui dados CSV separados por vírgula ou dados tabulares..."
-                  onChange={(e) => {
-                    if (e.target.value.trim()) {
-                      // Create a virtual file from pasted data
-                      const blob = new Blob([e.target.value], { type: 'text/csv' });
-                      const file = new File([blob], 'pasted-data.csv', { type: 'text/csv' });
-                      setSelectedFile(file);
-                      setImportResult(null);
-                    }
-                  }}
+                  value={textData}
+                  onChange={(e) => setTextData(e.target.value)}
+                  className="min-h-32 resize-none"
                 />
+                <p className="text-xs text-muted-foreground">
+                  Cole dados CSV ou tabulares diretamente
+                </p>
               </div>
+            )}
 
-              <Button 
-                onClick={handleImport} 
-                disabled={!selectedFile}
-                className="w-full"
-              >
-                Importar Dados
-              </Button>
+            {/* Progresso do upload */}
+            {uploadStatus.status !== 'idle' && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">{uploadStatus.message}</span>
+                  {uploadStatus.status === 'error' && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={resetImport}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+                <Progress value={uploadStatus.progress} className="w-full" />
+                {uploadStatus.status === 'uploading' && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    A processar...
+                  </div>
+                )}
+                {uploadStatus.status === 'completed' && (
+                  <div className="flex items-center gap-2 text-sm text-green-600">
+                    <CheckCircle className="h-4 w-4" />
+                    Processamento concluído!
+                  </div>
+                )}
+                {uploadStatus.status === 'error' && uploadStatus.error && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>{uploadStatus.error}</AlertDescription>
+                  </Alert>
+                )}
+              </div>
+            )}
 
-              {importResult && (
-                <Alert className={importResult.success ? "border-green-200" : "border-red-200"}>
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    <div>
-                      <p className="font-medium">{importResult.message}</p>
-                      {importResult.errors.length > 0 && (
-                        <div className="mt-2">
-                          <p className="text-sm font-medium">Erros encontrados:</p>
-                          <ul className="text-sm list-disc list-inside">
-                            {importResult.errors.slice(0, 5).map((error, index) => (
-                              <li key={index}>{error}</li>
-                            ))}
-                            {importResult.errors.length > 5 && (
-                              <li>... e mais {importResult.errors.length - 5} erros</li>
-                            )}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                  </AlertDescription>
-                </Alert>
+            {/* Botão de importação */}
+            <Button 
+              onClick={handleSmartImport}
+              disabled={
+                uploadStatus.status === 'uploading' || 
+                uploadStatus.status === 'processing' ||
+                uploadStatus.status === 'ai_processing' ||
+                (uploadMode === 'file' && !selectedFile) ||
+                (uploadMode === 'text' && !textData.trim())
+              }
+              className="w-full"
+            >
+              {uploadStatus.status === 'uploading' || uploadStatus.status === 'processing' || uploadStatus.status === 'ai_processing' ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  A processar...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  Importar com Smart AI
+                </>
               )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+            </Button>
+          </CardContent>
+        </Card>
 
-        <TabsContent value="export" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Transações</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-4">
-                  {transactions.length} transações disponíveis
-                </p>
-                <Button 
-                  onClick={exportTransactions} 
-                  variant="outline" 
-                  className="w-full"
-                  disabled={transactions.length === 0}
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Exportar
-                </Button>
-              </CardContent>
-            </Card>
+        {/* Seção de Exportação */}
+        <Card>
+          <CardHeader className="pb-4">
+            <CardTitle className="text-xl font-semibold flex items-center gap-2">
+              <Download className="h-6 w-6" />
+              Exportar
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Exportar dados em formato CSV
+            </p>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Transações</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    {transactions.length} transações disponíveis
+                  </p>
+                  <Button 
+                    onClick={exportTransactions} 
+                    variant="outline" 
+                    className="w-full"
+                    disabled={transactions.length === 0}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Exportar Transações
+                  </Button>
+                </CardContent>
+              </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Orçamentos</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-4">
-                  {budgets.length} orçamentos disponíveis
-                </p>
-                <Button 
-                  onClick={exportBudgets} 
-                  variant="outline" 
-                  className="w-full"
-                  disabled={budgets.length === 0}
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Exportar
-                </Button>
-              </CardContent>
-            </Card>
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Orçamentos</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    {budgets.length} orçamentos disponíveis
+                  </p>
+                  <Button 
+                    onClick={exportBudgets} 
+                    variant="outline" 
+                    className="w-full"
+                    disabled={budgets.length === 0}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Exportar Orçamentos
+                  </Button>
+                </CardContent>
+              </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Contas</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-4">
-                  {accounts.length} contas disponíveis
-                </p>
-                <Button 
-                  onClick={exportAccounts} 
-                  variant="outline" 
-                  className="w-full"
-                  disabled={accounts.length === 0}
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Exportar
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-      </Tabs>
-    </div>
-  );
-};
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Contas</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    {accounts.length} contas disponíveis
+                  </p>
+                  <Button 
+                    onClick={exportAccounts} 
+                    variant="outline" 
+                    className="w-full"
+                    disabled={accounts.length === 0}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Exportar Contas
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </CardContent>
+        </Card>
+       </div>
+
+       {/* Componente de revisão do Smart Import */}
+       {showReview && uploadStatus.sessionId && (
+         <SmartImportReview
+           sessionId={uploadStatus.sessionId}
+           onClose={() => {
+             setShowReview(false);
+             resetImport();
+           }}
+           onComplete={() => {
+             setShowReview(false);
+             resetImport();
+             // Recarregar dados se necessário
+             window.location.reload();
+           }}
+         />
+       )}
+     </div>
+   );
+ };
