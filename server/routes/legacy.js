@@ -769,7 +769,462 @@ router.delete('/investments/:id', async (req, res) => {
   }
 });
 
-// Add more routes as needed for other entities...
-// This is a comprehensive base that covers the main entities
+// ========== BUDGETS PUT/DELETE (missing routes) ==========
+router.put('/budgets/:id', validateRequest(schemas.budget), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, amount, category_id, period, start_date, end_date } = req.body;
+    
+    await db.query(
+      'UPDATE budgets SET name = ?, amount = ?, category_id = ?, period = ?, start_date = ?, end_date = ? WHERE id = ? AND user_id = ?',
+      [name, amount, category_id, period, start_date, end_date, id, req.user.userId]
+    );
+    
+    const budget = await db.query(`
+      SELECT b.*, c.name as category_name, c.color as category_color
+      FROM budgets b
+      LEFT JOIN categories c ON b.category_id = c.id
+      WHERE b.id = ?
+    `, [id]);
+    
+    logger.info('Updated budget', { 
+      userId: req.user.userId, 
+      budgetId: id 
+    });
+    
+    res.json({ success: true, data: budget[0] });
+  } catch (error) {
+    logger.error('Failed to update budget', error, { userId: req.user.userId });
+    res.status(500).json({ success: false, error: 'Failed to update budget' });
+  }
+});
+
+router.delete('/budgets/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    await db.query('DELETE FROM budgets WHERE id = ? AND user_id = ?', [id, req.user.userId]);
+    
+    logger.info('Deleted budget', { 
+      userId: req.user.userId, 
+      budgetId: id 
+    });
+    
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Failed to delete budget', error, { userId: req.user.userId });
+    res.status(500).json({ success: false, error: 'Failed to delete budget' });
+  }
+});
+
+// ========== ASSETS CRUD ==========
+router.get('/assets', cacheMiddleware(300), async (req, res) => {
+  try {
+    const assets = await db.query(`
+      SELECT * FROM assets
+      WHERE user_id = ?
+      ORDER BY created_at DESC
+    `, [req.user.userId]);
+    
+    logger.info('Retrieved assets', { 
+      userId: req.user.userId, 
+      count: assets.length 
+    });
+    
+    res.json({ success: true, data: assets });
+  } catch (error) {
+    logger.error('Failed to retrieve assets', error, { userId: req.user.userId });
+    res.status(500).json({ success: false, error: 'Failed to retrieve assets' });
+  }
+});
+
+router.post('/assets', validateRequest(schemas.transaction), async (req, res) => {
+  try {
+    const { name, type, purchase_price, current_value, purchase_date, description, depreciation_rate } = req.body;
+    
+    const result = await db.query(
+      'INSERT INTO assets (name, type, purchase_price, current_value, purchase_date, description, depreciation_rate, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [name, type, purchase_price, current_value || purchase_price, purchase_date, description, depreciation_rate || 0, req.user.userId]
+    );
+    
+    const asset = await db.query('SELECT * FROM assets WHERE id = ?', [result.insertId]);
+    
+    logger.info('Created asset', { 
+      userId: req.user.userId, 
+      assetId: result.insertId 
+    });
+    
+    res.json({ success: true, data: asset[0] });
+  } catch (error) {
+    logger.error('Failed to create asset', error, { userId: req.user.userId });
+    res.status(500).json({ success: false, error: 'Failed to create asset' });
+  }
+});
+
+router.put('/assets/:id', validateRequest(schemas.transaction), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, type, purchase_price, current_value, purchase_date, description, depreciation_rate } = req.body;
+    
+    await db.query(
+      'UPDATE assets SET name = ?, type = ?, purchase_price = ?, current_value = ?, purchase_date = ?, description = ?, depreciation_rate = ? WHERE id = ? AND user_id = ?',
+      [name, type, purchase_price, current_value, purchase_date, description, depreciation_rate, id, req.user.userId]
+    );
+    
+    const asset = await db.query('SELECT * FROM assets WHERE id = ?', [id]);
+    
+    logger.info('Updated asset', { 
+      userId: req.user.userId, 
+      assetId: id 
+    });
+    
+    res.json({ success: true, data: asset[0] });
+  } catch (error) {
+    logger.error('Failed to update asset', error, { userId: req.user.userId });
+    res.status(500).json({ success: false, error: 'Failed to update asset' });
+  }
+});
+
+router.delete('/assets/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    await db.query('DELETE FROM assets WHERE id = ? AND user_id = ?', [id, req.user.userId]);
+    
+    logger.info('Deleted asset', { 
+      userId: req.user.userId, 
+      assetId: id 
+    });
+    
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Failed to delete asset', error, { userId: req.user.userId });
+    res.status(500).json({ success: false, error: 'Failed to delete asset' });
+  }
+});
+
+// ========== SAVINGS GOALS CRUD ==========
+router.get('/savings-goals', cacheMiddleware(300), async (req, res) => {
+  try {
+    const savingsGoals = await db.query(`
+      SELECT sg.*, a.name as account_name
+      FROM savings_goals sg
+      LEFT JOIN accounts a ON sg.account_id = a.id
+      WHERE sg.user_id = ?
+      ORDER BY sg.created_at DESC
+    `, [req.user.userId]);
+    
+    logger.info('Retrieved savings goals', { 
+      userId: req.user.userId, 
+      count: savingsGoals.length 
+    });
+    
+    res.json({ success: true, data: savingsGoals });
+  } catch (error) {
+    logger.error('Failed to retrieve savings goals', error, { userId: req.user.userId });
+    res.status(500).json({ success: false, error: 'Failed to retrieve savings goals' });
+  }
+});
+
+router.post('/savings-goals', validateRequest(schemas.transaction), async (req, res) => {
+  try {
+    const { name, target_amount, current_amount, target_date, description, priority, account_id } = req.body;
+    
+    const result = await db.query(
+      'INSERT INTO savings_goals (name, target_amount, current_amount, target_date, description, priority, account_id, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [name, target_amount, current_amount || 0, target_date, description, priority || 'medium', account_id, req.user.userId]
+    );
+    
+    const savingsGoal = await db.query(`
+      SELECT sg.*, a.name as account_name
+      FROM savings_goals sg
+      LEFT JOIN accounts a ON sg.account_id = a.id
+      WHERE sg.id = ?
+    `, [result.insertId]);
+    
+    logger.info('Created savings goal', { 
+      userId: req.user.userId, 
+      savingsGoalId: result.insertId 
+    });
+    
+    res.json({ success: true, data: savingsGoal[0] });
+  } catch (error) {
+    logger.error('Failed to create savings goal', error, { userId: req.user.userId });
+    res.status(500).json({ success: false, error: 'Failed to create savings goal' });
+  }
+});
+
+router.put('/savings-goals/:id', validateRequest(schemas.transaction), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, target_amount, current_amount, target_date, description, priority, account_id, is_completed } = req.body;
+    
+    await db.query(
+      'UPDATE savings_goals SET name = ?, target_amount = ?, current_amount = ?, target_date = ?, description = ?, priority = ?, account_id = ?, is_completed = ? WHERE id = ? AND user_id = ?',
+      [name, target_amount, current_amount, target_date, description, priority, account_id, is_completed, id, req.user.userId]
+    );
+    
+    const savingsGoal = await db.query(`
+      SELECT sg.*, a.name as account_name
+      FROM savings_goals sg
+      LEFT JOIN accounts a ON sg.account_id = a.id
+      WHERE sg.id = ?
+    `, [id]);
+    
+    logger.info('Updated savings goal', { 
+      userId: req.user.userId, 
+      savingsGoalId: id 
+    });
+    
+    res.json({ success: true, data: savingsGoal[0] });
+  } catch (error) {
+    logger.error('Failed to update savings goal', error, { userId: req.user.userId });
+    res.status(500).json({ success: false, error: 'Failed to update savings goal' });
+  }
+});
+
+router.delete('/savings-goals/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    await db.query('DELETE FROM savings_goals WHERE id = ? AND user_id = ?', [id, req.user.userId]);
+    
+    logger.info('Deleted savings goal', { 
+      userId: req.user.userId, 
+      savingsGoalId: id 
+    });
+    
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Failed to delete savings goal', error, { userId: req.user.userId });
+    res.status(500).json({ success: false, error: 'Failed to delete savings goal' });
+  }
+});
+
+// ========== ENTITIES CRUD ==========
+router.get('/entities', cacheMiddleware(300), async (req, res) => {
+  try {
+    const entities = await db.query(`
+      SELECT * FROM entities
+      WHERE user_id = ?
+      ORDER BY name ASC
+    `, [req.user.userId]);
+    
+    logger.info('Retrieved entities', { 
+      userId: req.user.userId, 
+      count: entities.length 
+    });
+    
+    res.json({ success: true, data: entities });
+  } catch (error) {
+    logger.error('Failed to retrieve entities', error, { userId: req.user.userId });
+    res.status(500).json({ success: false, error: 'Failed to retrieve entities' });
+  }
+});
+
+router.post('/entities', validateRequest(schemas.transaction), async (req, res) => {
+  try {
+    const { name, type } = req.body;
+    
+    const result = await db.query(
+      'INSERT INTO entities (name, type, user_id) VALUES (?, ?, ?)',
+      [name, type || 'vendor', req.user.userId]
+    );
+    
+    const entity = await db.query('SELECT * FROM entities WHERE id = ?', [result.insertId]);
+    
+    logger.info('Created entity', { 
+      userId: req.user.userId, 
+      entityId: result.insertId 
+    });
+    
+    res.json({ success: true, data: entity[0] });
+  } catch (error) {
+    logger.error('Failed to create entity', error, { userId: req.user.userId });
+    res.status(500).json({ success: false, error: 'Failed to create entity' });
+  }
+});
+
+router.put('/entities/:id', validateRequest(schemas.transaction), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, type, is_active } = req.body;
+    
+    await db.query(
+      'UPDATE entities SET name = ?, type = ?, is_active = ? WHERE id = ? AND user_id = ?',
+      [name, type, is_active, id, req.user.userId]
+    );
+    
+    const entity = await db.query('SELECT * FROM entities WHERE id = ?', [id]);
+    
+    logger.info('Updated entity', { 
+      userId: req.user.userId, 
+      entityId: id 
+    });
+    
+    res.json({ success: true, data: entity[0] });
+  } catch (error) {
+    logger.error('Failed to update entity', error, { userId: req.user.userId });
+    res.status(500).json({ success: false, error: 'Failed to update entity' });
+  }
+});
+
+router.delete('/entities/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    await db.query('DELETE FROM entities WHERE id = ? AND user_id = ?', [id, req.user.userId]);
+    
+    logger.info('Deleted entity', { 
+      userId: req.user.userId, 
+      entityId: id 
+    });
+    
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Failed to delete entity', error, { userId: req.user.userId });
+    res.status(500).json({ success: false, error: 'Failed to delete entity' });
+  }
+});
+
+// ========== AI RULES CRUD ==========
+router.get('/ai-rules', cacheMiddleware(300), async (req, res) => {
+  try {
+    const aiRules = await db.query(`
+      SELECT * FROM ai_rules
+      WHERE user_id = ?
+      ORDER BY created_at DESC
+    `, [req.user.userId]);
+    
+    logger.info('Retrieved AI rules', { 
+      userId: req.user.userId, 
+      count: aiRules.length 
+    });
+    
+    res.json({ success: true, data: aiRules });
+  } catch (error) {
+    logger.error('Failed to retrieve AI rules', error, { userId: req.user.userId });
+    res.status(500).json({ success: false, error: 'Failed to retrieve AI rules' });
+  }
+});
+
+router.post('/ai-rules', validateRequest(schemas.transaction), async (req, res) => {
+  try {
+    const { name, description, conditions, actions } = req.body;
+    
+    const result = await db.query(
+      'INSERT INTO ai_rules (name, description, conditions, actions, user_id) VALUES (?, ?, ?, ?, ?)',
+      [name, description, JSON.stringify(conditions), JSON.stringify(actions), req.user.userId]
+    );
+    
+    const aiRule = await db.query('SELECT * FROM ai_rules WHERE id = ?', [result.insertId]);
+    
+    logger.info('Created AI rule', { 
+      userId: req.user.userId, 
+      aiRuleId: result.insertId 
+    });
+    
+    res.json({ success: true, data: aiRule[0] });
+  } catch (error) {
+    logger.error('Failed to create AI rule', error, { userId: req.user.userId });
+    res.status(500).json({ success: false, error: 'Failed to create AI rule' });
+  }
+});
+
+router.put('/ai-rules/:id', validateRequest(schemas.transaction), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, description, conditions, actions, is_active } = req.body;
+    
+    await db.query(
+      'UPDATE ai_rules SET name = ?, description = ?, conditions = ?, actions = ?, is_active = ? WHERE id = ? AND user_id = ?',
+      [name, description, JSON.stringify(conditions), JSON.stringify(actions), is_active, id, req.user.userId]
+    );
+    
+    const aiRule = await db.query('SELECT * FROM ai_rules WHERE id = ?', [id]);
+    
+    logger.info('Updated AI rule', { 
+      userId: req.user.userId, 
+      aiRuleId: id 
+    });
+    
+    res.json({ success: true, data: aiRule[0] });
+  } catch (error) {
+    logger.error('Failed to update AI rule', error, { userId: req.user.userId });
+    res.status(500).json({ success: false, error: 'Failed to update AI rule' });
+  }
+});
+
+router.delete('/ai-rules/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    await db.query('DELETE FROM ai_rules WHERE id = ? AND user_id = ?', [id, req.user.userId]);
+    
+    logger.info('Deleted AI rule', { 
+      userId: req.user.userId, 
+      aiRuleId: id 
+    });
+    
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Failed to delete AI rule', error, { userId: req.user.userId });
+    res.status(500).json({ success: false, error: 'Failed to delete AI rule' });
+  }
+});
+
+// ========== USER SETTINGS (fix route path) ==========
+router.get('/user-settings', cacheMiddleware(600), async (req, res) => {
+  try {
+    const settings = await db.query(`
+      SELECT * FROM user_settings
+      WHERE user_id = ?
+    `, [req.user.userId]);
+    
+    logger.info('Retrieved user settings', { 
+      userId: req.user.userId 
+    });
+    
+    res.json({ success: true, data: settings[0] || {} });
+  } catch (error) {
+    logger.error('Failed to retrieve user settings', error, { userId: req.user.userId });
+    res.status(500).json({ success: false, error: 'Failed to retrieve user settings' });
+  }
+});
+
+router.put('/user-settings', validateRequest(schemas.userSettings), async (req, res) => {
+  try {
+    const { currency, language, theme, date_format, number_format, timezone, notifications } = req.body;
+    
+    // Check if settings exist
+    const existing = await db.query('SELECT id FROM user_settings WHERE user_id = ?', [req.user.userId]);
+    
+    if (existing.length > 0) {
+      // Update existing settings
+      await db.query(`
+        UPDATE user_settings 
+        SET currency = ?, language = ?, theme = ?, date_format = ?, number_format = ?, timezone = ?, notifications = ?
+        WHERE user_id = ?
+      `, [currency, language, theme, date_format, number_format, timezone, JSON.stringify(notifications), req.user.userId]);
+    } else {
+      // Insert new settings
+      await db.query(`
+        INSERT INTO user_settings (user_id, currency, language, theme, date_format, number_format, timezone, notifications)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `, [req.user.userId, currency, language, theme, date_format, number_format, timezone, JSON.stringify(notifications)]);
+    }
+    
+    const settings = await db.query('SELECT * FROM user_settings WHERE user_id = ?', [req.user.userId]);
+    
+    logger.info('Updated user settings', { 
+      userId: req.user.userId 
+    });
+    
+    res.json({ success: true, data: settings[0] });
+  } catch (error) {
+    logger.error('Failed to update user settings', error, { userId: req.user.userId });
+    res.status(500).json({ success: false, error: 'Failed to update user settings' });
+  }
+});
 
 export default router;
