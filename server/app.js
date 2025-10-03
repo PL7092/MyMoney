@@ -33,6 +33,7 @@ import {
 // Import existing database service
 import { DatabaseService } from './db-commonjs.js';
 import legacyRoutes from './routes/legacy.js';
+import smartImportRoutes from './routes/smart-import.js';
 
 class App {
   constructor() {
@@ -118,6 +119,9 @@ class App {
     // System monitoring routes
     this.app.get('/api/system/status', this.getSystemStatus.bind(this));
     this.app.get('/api/system/logs', strictLimiter, this.getSystemLogs.bind(this));
+
+    // Smart Import routes
+    this.app.use('/api/smart-import', smartImportRoutes);
 
     // Import existing routes from original server
     this.importLegacyRoutes();

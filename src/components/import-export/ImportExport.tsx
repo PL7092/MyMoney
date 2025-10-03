@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from '../ui/alert';
 import { useToast } from '../ui/use-toast';
 import { Upload, Download, FileText, AlertCircle, Sparkles } from 'lucide-react';
 import { TransactionImportWizard } from './TransactionImportWizard';
+import { SmartImportUpload } from './SmartImportUpload';
 
 interface ImportResult {
   success: boolean;
@@ -29,6 +30,7 @@ export const ImportExport: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [showWizard, setShowWizard] = useState(false);
+  const [showSmartImport, setShowSmartImport] = useState(false);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -336,6 +338,10 @@ export const ImportExport: React.FC = () => {
     return <TransactionImportWizard onClose={() => setShowWizard(false)} />;
   }
 
+  if (showSmartImport) {
+    return <SmartImportUpload onComplete={() => setShowSmartImport(false)} />;
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -372,7 +378,7 @@ export const ImportExport: React.FC = () => {
                 </div>
                 
                 <Button 
-                  onClick={() => setShowWizard(true)}
+                  onClick={() => setShowSmartImport(true)}
                   className="w-full"
                   size="sm"
                 >

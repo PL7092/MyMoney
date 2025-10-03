@@ -332,14 +332,228 @@ export class FileParsingService {
   }
 
   private static async extractTextFromPDF(file: File): Promise<string> {
-    // Implementação básica - em produção usaria uma biblioteca como pdf-parse
-    // Para agora, retornamos uma string vazia e sugerimos o usuário cole os dados
-    return '';
+    try {
+      // Usar PDF.js para extrair texto do PDF
+      const pdfjsLib = await import('pdfjs-dist');
+      
+      // Configurar worker
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+      
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      
+      let fullText = '';
+      
+      // Extrair texto de todas as páginas
+      for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+        const page = await pdf.getPage(pageNum);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items
+          .map((item: any) => item.str)
+          .join(' ');
+        fullText += pageText + '\n';
+      }
+      
+      return fullText;
+    } catch (error) {
+      console.error('Erro ao extrair texto do PDF:', error);
+      throw new Error('Não foi possível extrair texto do PDF. Verifique se o arquivo não está protegido.');
+    }
   }
 
   private static extractTransactionsFromText(text: string): ParsedTransaction[] {
-    // Implementação básica para extrair transações de texto livre
-    // Seria expandida com regex patterns para diferentes formatos de extrato
-    return [];
+    const transactions: ParsedTransaction[] = [];
+    const lines = text.split('\n').filter(line => line.trim());
+    
+    // Padrões regex para diferentes formatos de extrato bancário
+    const patterns = [
+      // Formato: DD/MM/YYYY DESCRIÇÃO VALOR
+      /(\d{2}\/\d{2}\/\d{4})\s+(.+?)\s+([-+]?\d+[.,]\d{2})\s*$/,
+      // Formato: DD-MM-YYYY DESCRIÇÃO VALOR
+      /(\d{2}-\d{2}-\d{4})\s+(.+?)\s+([-+]?\d+[.,]\d{2})\s*$/,
+      // Formato: YYYY-MM-DD DESCRIÇÃO VALOR
+      /(\d{4}-\d{2}-\d{2})\s+(.+?)\s+([-+]?\d+[.,]\d{2})\s*$/,
+      // Formato com separador de milhares: DD/MM/YYYY DESCRIÇÃO 1.234,56
+      /(\d{2}\/\d{2}\/\d{4})\s+(.+?)\s+([-+]?\d{1,3}(?:\.\d{3})*[,]\d{2})\s*$/
+    ];
+    
+    for (const line of lines) {
+      for (const pattern of patterns) {
+        const match = line.match(pattern);
+        if (match) {
+          const [, dateStr, description, amountStr] = match;
+          
+          try {
+            // Processar data
+            let date: string;
+            if (dateStr.includes('/')) {
+              const [day, month, year] = dateStr.split('/');
+              date = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+            } else if (dateStr.includes('-')) {
+              if (dateStr.startsWith('20')) {
+                date = dateStr; // Já está no formato YYYY-MM-DD
+              } else {
+                const [day, month, year] = dateStr.split('-');
+                date = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+              }
+            } else {
+              continue; // Formato não reconhecido
+            }
+            
+            // Processar valor
+            const cleanAmount = amountStr
+              .replace(/[€$£¥₹]/g, '')
+              .replace(/\s/g, '')
+              .replace(/\./g, '') // Remover separadores de milhares
+              .replace(',', '.'); // Trocar vírgula decimal por ponto
+            
+            const amount = Math.abs(parseFloat(cleanAmount));
+            if (isNaN(amount)) continue;
+            
+            // Determinar tipo baseado no sinal
+            const type: 'income' | 'expense' = amountStr.startsWith('-') ? 'expense' : 'income';
+            
+            transactions.push({
+              date,
+              description: description.trim(),
+              amount,
+              type,
+              rawData: { originalLine: line }
+            });
+            
+            break; // Parar de tentar outros padrões para esta linha
+          } catch (error) {
+            console.warn('Erro ao processar linha:', line, error);
+            continue;
+          }
+        }
+      }
+    }
+    
+    return transactions;
+  }
+
+  // Método para validar e enriquecer dados antes do Smart Import
+  static validateAndEnrichData(transactions: ParsedTransaction[]): {
+    valid: ParsedTransaction[];
+    invalid: { transaction: ParsedTransaction; errors: string[] }[];
+  } {
+    const valid: ParsedTransaction[] = [];
+    const invalid: { transaction: ParsedTransaction; errors: string[] }[] = [];
+    
+    for (const transaction of transactions) {
+      const errors: string[] = [];
+      
+      // Validar data
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (!dateRegex.test(transaction.date)) {
+        errors.push('Formato de data inválido (esperado: YYYY-MM-DD)');
+      } else {
+        const date = new Date(transaction.date);
+        if (isNaN(date.getTime())) {
+          errors.push('Data inválida');
+        }
+      }
+      
+      // Validar descrição
+      if (!transaction.description || transaction.description.trim().length < 3) {
+        errors.push('Descrição muito curta (mínimo 3 caracteres)');
+      }
+      
+      // Validar valor
+      if (!transaction.amount || transaction.amount <= 0) {
+        errors.push('Valor deve ser maior que zero');
+      }
+      
+      // Validar tipo
+      if (transaction.type && !['income', 'expense', 'transfer'].includes(transaction.type)) {
+        errors.push('Tipo de transação inválido');
+      }
+      
+      if (errors.length === 0) {
+        valid.push(transaction);
+      } else {
+        invalid.push({ transaction, errors });
+      }
+    }
+    
+    return { valid, invalid };
+  }
+
+  // Método para detectar duplicatas potenciais
+  static detectPotentialDuplicates(transactions: ParsedTransaction[]): {
+    transaction: ParsedTransaction;
+    duplicates: ParsedTransaction[];
+    confidence: number;
+  }[] {
+    const duplicates: {
+      transaction: ParsedTransaction;
+      duplicates: ParsedTransaction[];
+      confidence: number;
+    }[] = [];
+    
+    for (let i = 0; i < transactions.length; i++) {
+      const current = transactions[i];
+      const potentialDuplicates: ParsedTransaction[] = [];
+      
+      for (let j = i + 1; j < transactions.length; j++) {
+        const other = transactions[j];
+        
+        // Verificar se são potenciais duplicatas
+        const sameAmount = Math.abs(current.amount - other.amount) < 0.01;
+        const sameDate = current.date === other.date;
+        const similarDescription = this.calculateSimilarity(
+          current.description.toLowerCase(),
+          other.description.toLowerCase()
+        ) > 0.8;
+        
+        if (sameAmount && (sameDate || similarDescription)) {
+          potentialDuplicates.push(other);
+        }
+      }
+      
+      if (potentialDuplicates.length > 0) {
+        const confidence = potentialDuplicates.length > 1 ? 0.9 : 0.7;
+        duplicates.push({
+          transaction: current,
+          duplicates: potentialDuplicates,
+          confidence
+        });
+      }
+    }
+    
+    return duplicates;
+  }
+
+  // Método auxiliar para calcular similaridade entre strings
+  private static calculateSimilarity(str1: string, str2: string): number {
+    const longer = str1.length > str2.length ? str1 : str2;
+    const shorter = str1.length > str2.length ? str2 : str1;
+    
+    if (longer.length === 0) return 1.0;
+    
+    const editDistance = this.levenshteinDistance(longer, shorter);
+    return (longer.length - editDistance) / longer.length;
+  }
+
+  // Implementação da distância de Levenshtein
+  private static levenshteinDistance(str1: string, str2: string): number {
+    const matrix = Array(str2.length + 1).fill(null).map(() => Array(str1.length + 1).fill(null));
+    
+    for (let i = 0; i <= str1.length; i++) matrix[0][i] = i;
+    for (let j = 0; j <= str2.length; j++) matrix[j][0] = j;
+    
+    for (let j = 1; j <= str2.length; j++) {
+      for (let i = 1; i <= str1.length; i++) {
+        const indicator = str1[i - 1] === str2[j - 1] ? 0 : 1;
+        matrix[j][i] = Math.min(
+          matrix[j][i - 1] + 1,     // deletion
+          matrix[j - 1][i] + 1,     // insertion
+          matrix[j - 1][i - 1] + indicator // substitution
+        );
+      }
+    }
+    
+    return matrix[str2.length][str1.length];
   }
 }
