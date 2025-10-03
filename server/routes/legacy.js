@@ -317,16 +317,16 @@ router.get('/transactions', cacheMiddleware(60), async (req, res) => {
     }
     
     if (start_date) {
-      query += ' AND t.date >= ?';
+      query += ' AND t.transaction_date >= ?';
       params.push(start_date);
     }
     
     if (end_date) {
-      query += ' AND t.date <= ?';
+      query += ' AND t.transaction_date <= ?';
       params.push(end_date);
     }
     
-    query += ' ORDER BY t.date DESC, t.created_at DESC LIMIT ? OFFSET ?';
+    query += ' ORDER BY t.transaction_date DESC, t.created_at DESC LIMIT ? OFFSET ?';
     params.push(parseInt(limit), parseInt(offset));
     
     const transactions = await db.query(query, params);
@@ -549,8 +549,8 @@ router.get('/budgets', cacheMiddleware(300), async (req, res) => {
        LEFT JOIN transactions t ON b.category_id = t.category_id 
                                 AND t.user_id = b.user_id 
                                 AND t.type = 'expense'
-                                AND t.date >= b.start_date 
-                                AND t.date <= b.end_date
+                                AND t.transaction_date >= b.start_date 
+                                AND t.transaction_date <= b.end_date
        WHERE b.user_id = ?
        GROUP BY b.id
        ORDER BY b.start_date DESC`,

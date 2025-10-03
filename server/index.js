@@ -396,7 +396,7 @@ app.get('/api/transactions', async (req, res) => {
       LEFT JOIN categories c ON t.category_id = c.id
       LEFT JOIN accounts a ON t.account_id = a.id
       WHERE t.user_id = ?
-      ORDER BY t.date DESC, t.created_at DESC
+      ORDER BY t.transaction_date DESC, t.created_at DESC
     `, [1]);
     res.json({ success: true, data: transactions });
   } catch (error) {
