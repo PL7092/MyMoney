@@ -259,15 +259,12 @@ SELECT
     t.amount,
     t.description,
     t.type,
-    t.date,
+    t.transaction_date,
     c.name as category_name,
     c.color as category_color,
-    a.name as account_name,
-    a.type as account_type,
     t.user_id
 FROM transactions t
-LEFT JOIN categories c ON t.category_id = c.id
-LEFT JOIN accounts a ON t.account_id = a.id;
+LEFT JOIN categories c ON t.category_id = c.id;
 
 CREATE OR REPLACE VIEW v_budget_status AS
 SELECT 

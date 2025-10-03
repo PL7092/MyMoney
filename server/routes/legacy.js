@@ -293,18 +293,12 @@ router.get('/transactions', cacheMiddleware(60), async (req, res) => {
     const offset = (page - 1) * limit;
     
     let query = `
-      SELECT t.*, a.name as account_name, c.name as category_name, c.color as category_color
+      SELECT t.*, c.name as category_name, c.color as category_color
       FROM transactions t
-      LEFT JOIN accounts a ON t.account_id = a.id
       LEFT JOIN categories c ON t.category_id = c.id
       WHERE t.user_id = ?
     `;
     const params = [req.user.userId];
-    
-    if (account_id) {
-      query += ' AND t.account_id = ?';
-      params.push(account_id);
-    }
     
     if (category_id) {
       query += ' AND t.category_id = ?';
@@ -335,11 +329,6 @@ router.get('/transactions', cacheMiddleware(60), async (req, res) => {
     let countQuery = 'SELECT COUNT(*) as total FROM transactions WHERE user_id = ?';
     const countParams = [req.user.userId];
     
-    if (account_id) {
-      countQuery += ' AND account_id = ?';
-      countParams.push(account_id);
-    }
-    
     if (category_id) {
       countQuery += ' AND category_id = ?';
       countParams.push(category_id);
@@ -351,12 +340,12 @@ router.get('/transactions', cacheMiddleware(60), async (req, res) => {
     }
     
     if (start_date) {
-      countQuery += ' AND date >= ?';
+      countQuery += ' AND transaction_date >= ?';
       countParams.push(start_date);
     }
     
     if (end_date) {
-      countQuery += ' AND date <= ?';
+      countQuery += ' AND transaction_date <= ?';
       countParams.push(end_date);
     }
     

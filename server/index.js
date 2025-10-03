@@ -390,11 +390,9 @@ app.get('/api/transactions', async (req, res) => {
   try {
     if (!db.pool) await db.createConnection();
     const transactions = await db.executeQuery(`
-      SELECT t.*, c.name as category_name, c.color as category_color, 
-             a.name as account_name 
+      SELECT t.*, c.name as category_name, c.color as category_color
       FROM transactions t
       LEFT JOIN categories c ON t.category_id = c.id
-      LEFT JOIN accounts a ON t.account_id = a.id
       WHERE t.user_id = ?
       ORDER BY t.transaction_date DESC, t.created_at DESC
     `, [1]);
@@ -421,11 +419,9 @@ app.post('/api/transactions', async (req, res) => {
     );
     
     const transaction = await db.executeQuery(`
-      SELECT t.*, c.name as category_name, c.color as category_color, 
-             a.name as account_name 
+      SELECT t.*, c.name as category_name, c.color as category_color
       FROM transactions t
       LEFT JOIN categories c ON t.category_id = c.id
-      LEFT JOIN accounts a ON t.account_id = a.id
       WHERE t.id = ?
     `, [result.insertId]);
     
@@ -458,11 +454,9 @@ app.put('/api/transactions/:id', async (req, res) => {
     await db.executeQuery('UPDATE accounts SET balance = balance + ? WHERE id = ?', [balanceChange, account_id]);
     
     const transaction = await db.executeQuery(`
-      SELECT t.*, c.name as category_name, c.color as category_color, 
-             a.name as account_name 
+      SELECT t.*, c.name as category_name, c.color as category_color
       FROM transactions t
       LEFT JOIN categories c ON t.category_id = c.id
-      LEFT JOIN accounts a ON t.account_id = a.id
       WHERE t.id = ?
     `, [id]);
     
@@ -634,11 +628,9 @@ app.get('/api/recurring-transactions', async (req, res) => {
   try {
     if (!db.pool) await db.createConnection();
     const recurringTransactions = await db.executeQuery(`
-      SELECT rt.*, c.name as category_name, c.color as category_color, 
-             a.name as account_name
+      SELECT rt.*, c.name as category_name, c.color as category_color
       FROM recurring_transactions rt
       LEFT JOIN categories c ON rt.category_id = c.id
-      LEFT JOIN accounts a ON rt.account_id = a.id
       WHERE rt.user_id = ?
       ORDER BY rt.created_at DESC
     `, [1]);
@@ -657,11 +649,9 @@ app.post('/api/recurring-transactions', async (req, res) => {
       [amount, description, type, frequency, category_id, account_id, start_date, end_date, next_occurrence || start_date, 1]
     );
     const recurringTransaction = await db.executeQuery(`
-      SELECT rt.*, c.name as category_name, c.color as category_color, 
-             a.name as account_name
+      SELECT rt.*, c.name as category_name, c.color as category_color
       FROM recurring_transactions rt
       LEFT JOIN categories c ON rt.category_id = c.id
-      LEFT JOIN accounts a ON rt.account_id = a.id
       WHERE rt.id = ?
     `, [result.insertId]);
     res.json({ success: true, data: recurringTransaction[0] });
@@ -680,11 +670,9 @@ app.put('/api/recurring-transactions/:id', async (req, res) => {
       [amount, description, type, frequency, category_id, account_id, start_date, end_date, next_occurrence, is_active, id, 1]
     );
     const recurringTransaction = await db.executeQuery(`
-      SELECT rt.*, c.name as category_name, c.color as category_color, 
-             a.name as account_name
+      SELECT rt.*, c.name as category_name, c.color as category_color
       FROM recurring_transactions rt
       LEFT JOIN categories c ON rt.category_id = c.id
-      LEFT JOIN accounts a ON rt.account_id = a.id
       WHERE rt.id = ?
     `, [id]);
     res.json({ success: true, data: recurringTransaction[0] });
