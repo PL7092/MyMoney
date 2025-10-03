@@ -9,22 +9,30 @@ import { logger } from './services/LoggerService.js';
 import { dbInit } from './services/DatabaseInitService.js';
 import { healthCheck } from './services/HealthCheckService.js';
 
-// Validate required environment variables
+// Validate required environment variables (secrets will be validated by the secrets utility)
 const requiredEnvVars = [
   'DB_HOST',
   'DB_USER', 
-  'DB_PASSWORD',
-  'DB_NAME',
-  'JWT_SECRET',
-  'JWT_REFRESH_SECRET'
+  'DB_NAME'
+];
+
+// Check for either direct env vars or secret file paths
+const secretEnvVars = [
+  { direct: 'DB_PASSWORD', file: 'DB_PASSWORD_FILE' },
+  { direct: 'JWT_SECRET', file: 'JWT_SECRET_FILE' },
+  { direct: 'JWT_REFRESH_SECRET', file: 'JWT_REFRESH_SECRET_FILE' }
 ];
 
 const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
+const missingSecrets = secretEnvVars.filter(secret => 
+  !process.env[secret.direct] && !process.env[secret.file]
+).map(secret => `${secret.direct} or ${secret.file}`);
 
-if (missingEnvVars.length > 0) {
-  logger.error('Missing required environment variables', { missing: missingEnvVars });
-  console.error('❌ Missing required environment variables:', missingEnvVars.join(', '));
-  console.error('Please check your .env file and ensure all required variables are set.');
+if (missingEnvVars.length > 0 || missingSecrets.length > 0) {
+  const allMissing = [...missingEnvVars, ...missingSecrets];
+  logger.error('Missing required environment variables or secrets', { missing: allMissing });
+  console.error('❌ Missing required environment variables or secrets:', allMissing.join(', '));
+  console.error('Please check your .env file and Docker secrets configuration.');
   process.exit(1);
 }
 

@@ -2,6 +2,7 @@ import mysql from 'mysql2/promise';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { getDbPassword } from './utils/secrets.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -25,7 +26,7 @@ class DatabaseService {
             process.env.DB_HOST || 'mariadb',
       port: normalizePort(config.port || process.env.DB_PORT || 3306),
       user: (config.username && String(config.username).trim()) || (process.env.DB_USER || 'finance_user'),
-      password: (config.password && String(config.password).trim()) || (process.env.DB_PASSWORD || 'finance_user_password_2024'),
+      password: (config.password && String(config.password).trim()) || getDbPassword(),
       database: (config.database && String(config.database).trim()) || (process.env.DB_NAME || 'personal_finance'),
       ssl: (config.useSSL || process.env.DB_SSL === 'true') ? {} : false,
       connectionLimit: Number(config.maxConnections) || Number(process.env.DB_CONNECTION_LIMIT) || 10,

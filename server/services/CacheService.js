@@ -1,5 +1,6 @@
 import redis from 'redis';
 import { logger } from './LoggerService.js';
+import { getRedisPassword } from '../utils/secrets.js';
 
 class CacheService {
   constructor() {
@@ -32,7 +33,7 @@ class CacheService {
       
       this.client = redis.createClient({
         url: redisUrl,
-        password: process.env.REDIS_PASSWORD,
+        password: getRedisPassword(),
         socket: {
           connectTimeout: 5000,
           lazyConnect: true,

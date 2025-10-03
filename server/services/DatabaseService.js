@@ -1,6 +1,7 @@
 import mysql from 'mysql2/promise';
 import { promises as fs } from 'fs';
 import path from 'path';
+import { getDbPassword } from '../utils/secrets.js';
 
 class DatabaseService {
   constructor() {
@@ -9,7 +10,7 @@ class DatabaseService {
       host: process.env.DB_HOST || 'mariadb',
       port: parseInt(process.env.DB_PORT) || 3306,
       user: process.env.DB_USER || 'finance_user',
-      password: process.env.DB_PASSWORD || 'finance_user_password_2024',
+      password: getDbPassword(),
       database: process.env.DB_NAME || 'personal_finance',
       charset: process.env.DB_CHARSET || 'utf8mb4',
       collation: process.env.DB_COLLATION || 'utf8mb4_unicode_ci',

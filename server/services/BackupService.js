@@ -5,6 +5,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { promisify } from 'util';
 import { logger } from './LoggerService.js';
+import { getDbPassword } from '../utils/secrets.js';
 
 const execAsync = promisify(exec);
 
@@ -18,7 +19,7 @@ class BackupService {
       port: process.env.DB_PORT || 3306,
       database: process.env.DB_NAME || 'mymoney',
       username: process.env.DB_USER || 'root',
-      password: process.env.DB_PASSWORD || ''
+      password: getDbPassword()
     };
     this.retentionDays = parseInt(process.env.BACKUP_RETENTION_DAYS) || 30;
     this.isEnabled = process.env.BACKUP_ENABLED === 'true';

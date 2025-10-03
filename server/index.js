@@ -4,6 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import 'dotenv/config';
 import db from './db.js';
+import { getDbPassword } from './utils/secrets.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -68,7 +69,7 @@ app.post('/api/db/init', async (req, res) => {
       host: process.env.DB_HOST === 'mariadb' ? 'localhost' : process.env.DB_HOST,
       port: process.env.DB_PORT,
       username: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
+      password: getDbPassword(),
       database: process.env.DB_NAME,
       useSSL: process.env.DB_SSL === 'true'
     };
@@ -99,7 +100,7 @@ app.get('/api/db/stats', async (req, res) => {
         host: process.env.DB_HOST === 'mariadb' ? 'localhost' : process.env.DB_HOST,
         port: process.env.DB_PORT,
         username: process.env.DB_USER,
-        password: process.env.DB_PASSWORD,
+        password: getDbPassword(),
         database: process.env.DB_NAME,
         useSSL: process.env.DB_SSL === 'true'
       });
@@ -131,7 +132,7 @@ app.post('/api/db/stats', async (req, res) => {
         host: process.env.DB_HOST === 'mariadb' ? 'localhost' : process.env.DB_HOST,
         port: process.env.DB_PORT,
         username: process.env.DB_USER,
-        password: process.env.DB_PASSWORD,
+        password: getDbPassword(),
         database: process.env.DB_NAME,
         useSSL: process.env.DB_SSL === 'true'
       });
@@ -156,7 +157,7 @@ app.post('/api/db/import', async (req, res) => {
         host: process.env.DB_HOST,
         port: process.env.DB_PORT,
         username: process.env.DB_USER,
-        password: process.env.DB_PASSWORD,
+        password: getDbPassword(),
         database: process.env.DB_NAME,
         useSSL: process.env.DB_SSL === 'true'
       });
@@ -1291,7 +1292,7 @@ const initializeWithRetry = async (retries = 10, delay = 5000) => {
         host: process.env.DB_HOST || 'mariadb',
         port: parseInt(process.env.DB_PORT) || 3306,
         username: process.env.DB_USER || 'finance_user',
-        password: process.env.DB_PASSWORD || 'finance_user_password_2024',
+        password: getDbPassword(),
         database: process.env.DB_NAME || 'personal_finance',
         useSSL: process.env.DB_SSL === 'true'
       });

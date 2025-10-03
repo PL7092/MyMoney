@@ -5,12 +5,15 @@ services:
     container_name: MyMoney-MariaDB
     restart: unless-stopped
     environment:
-      - MYSQL_ROOT_PASSWORD=rootpassword123
+      - MYSQL_ROOT_PASSWORD_FILE=/run/secrets/db_root_password
       - MYSQL_DATABASE=mymoney
       - MYSQL_USER=MyMoney
-      - MYSQL_PASSWORD=1Tretadepassword?
+      - MYSQL_PASSWORD_FILE=/run/secrets/db_password
       - MYSQL_CHARSET=utf8mb4
       - MYSQL_COLLATION=utf8mb4_unicode_ci
+    secrets:
+      - db_root_password
+      - db_password
     ports:
       - "3306:3306"
     networks:
@@ -35,7 +38,9 @@ services:
       - mymoney-network
     volumes:
       - redis_data:/data
-    command: redis-server --appendonly yes
+    secrets:
+      - redis_password
+    command: sh -c 'redis-server --appendonly yes --requirepass "$$(cat /run/secrets/redis_password)"'
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 30s
@@ -47,6 +52,11 @@ services:
     build: .
     container_name: MyMoney
     restart: unless-stopped
+    secrets:
+      - db_password
+      - jwt_secret
+      - jwt_refresh_secret
+      - redis_password
     depends_on:
       mariadb:
         condition: service_healthy
@@ -59,18 +69,18 @@ services:
       - DB_PORT=3306
       - DB_NAME=${DB_NAME:-mymoney}
       - DB_USER=${DB_USER:-MyMoney}
-      - DB_PASSWORD=${DB_PASSWORD:-1Tretadepassword?}
+      - DB_PASSWORD_FILE=/run/secrets/db_password
       - DB_SSL=false
       # Configuração MariaDB externo (comentado)
       # - DB_HOST=192.168.1.243
       - APP_PORT=${APP_PORT:-3001}
-      - JWT_SECRET=${JWT_SECRET:-your_super_secure_jwt_secret_key_here_minimum_32_characters}
-      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-your_super_secure_refresh_secret_key_here_minimum_32_characters}
+      - JWT_SECRET_FILE=/run/secrets/jwt_secret
+      - JWT_REFRESH_SECRET_FILE=/run/secrets/jwt_refresh_secret
       - JWT_EXPIRES_IN=15m
       - JWT_REFRESH_EXPIRES_IN=7d
-      - REDIS_URL=redis://redis:6379
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - REDIS_PASSWORD_FILE=/run/secrets/redis_password
       - BCRYPT_ROUNDS=12
       - RATE_LIMIT_WINDOW_MS=900000
       - RATE_LIMIT_MAX_REQUESTS=100
@@ -133,3 +143,15 @@ volumes:
 networks:
   mymoney-network:
     driver: bridge
+
+secrets:
+  db_password:
+    file: ./secrets/db_password.txt
+  db_root_password:
+    file: ./secrets/db_root_password.txt
+  jwt_secret:
+    file: ./secrets/jwt_secret.txt
+  jwt_refresh_secret:
+    file: ./secrets/jwt_refresh_secret.txt
+  redis_password:
+    file: ./secrets/redis_password.txt
