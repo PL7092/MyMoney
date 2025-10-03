@@ -26,8 +26,8 @@ export function readSecret(secretPath, envVar, defaultValue = '') {
       return process.env[envVar];
     }
     
-    // Use default value
-    if (defaultValue) {
+    // Use default value (including empty string)
+    if (defaultValue !== undefined) {
       logger.warn(`Using default value for ${envVar}`);
       return defaultValue;
     }
@@ -42,7 +42,7 @@ export function readSecret(secretPath, envVar, defaultValue = '') {
       return process.env[envVar];
     }
     
-    if (defaultValue) {
+    if (defaultValue !== undefined) {
       logger.warn(`Using default value for ${envVar} after error`);
       return defaultValue;
     }
