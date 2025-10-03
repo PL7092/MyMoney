@@ -1247,14 +1247,15 @@ app.post('/api/import/transactions', async (req, res) => {
 });
 
 // API 404 handler - must come before the catch-all route
-app.use('/api/*', (req, res) => {
-  console.error('API endpoint not found:', req.path);
-  res.status(404).json({ 
-    success: false, 
-    error: 'API endpoint not found',
-    path: req.path 
-  });
-});
+// TEMPORARILY COMMENTED OUT - This was interfering with API routes
+// app.use('/api/*', (req, res) => {
+//   console.error('API endpoint not found:', req.path);
+//   res.status(404).json({ 
+//     success: false, 
+//     error: 'API endpoint not found',
+//     path: req.path 
+//   });
+// });
 
 // Serve static assets
 app.use(express.static(path.resolve(__dirname, '../dist')));
