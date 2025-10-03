@@ -57,17 +57,17 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+    external_links:
+      - "mariadb:mariadb"
     environment:
       - NODE_ENV=production
       # Configuração MariaDB externo
-      - DB_HOST=host.docker.internal
+      - DB_HOST=mariadb
       - DB_PORT=3306
       - DB_NAME=${DB_NAME:-mymoney}
       - DB_USER=${DB_USER:-MyMoney}
       - DB_PASSWORD_FILE=/run/secrets/db_password
       - DB_SSL=false
-      # Configuração MariaDB interno (comentado)
-      # - DB_HOST=mariadb
       - APP_PORT=${APP_PORT:-3001}
       - JWT_SECRET_FILE=/run/secrets/jwt_secret
       - JWT_REFRESH_SECRET_FILE=/run/secrets/jwt_refresh_secret
