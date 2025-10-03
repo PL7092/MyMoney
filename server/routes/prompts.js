@@ -8,7 +8,7 @@ router.get('/', async (req, res) => {
   try {
     if (!db.pool) await db.createConnection();
     
-    const rows = await db.executeQuery(
+    const rows = await db.query(
       'SELECT * FROM ai_prompts ORDER BY category, name'
     );
     
@@ -39,7 +39,7 @@ router.get('/category/:category', async (req, res) => {
   try {
     if (!db.pool) await db.createConnection();
     
-    const rows = await db.executeQuery(
+    const rows = await db.query(
       'SELECT * FROM ai_prompts WHERE category = ? AND is_active = TRUE ORDER BY name',
       [category]
     );
@@ -71,7 +71,7 @@ router.get('/:id', async (req, res) => {
   try {
     if (!db.pool) await db.createConnection();
     
-    const rows = await db.executeQuery(
+    const rows = await db.query(
       'SELECT * FROM ai_prompts WHERE id = ?',
       [id]
     );
@@ -108,7 +108,7 @@ router.post('/', async (req, res) => {
   try {
     if (!db.pool) await db.createConnection();
     
-    const result = await db.executeQuery(
+    const result = await db.query(
       'INSERT INTO ai_prompts (name, category, prompt, description, variables, is_active, is_default) VALUES (?, ?, ?, ?, ?, TRUE, FALSE)',
       [name, category, prompt, description || null, JSON.stringify(variables || [])]
     );
@@ -137,7 +137,7 @@ router.put('/:id', async (req, res) => {
     if (!db.pool) await db.createConnection();
     
     // Check if prompt exists
-    const existing = await db.executeQuery(
+    const existing = await db.query(
       'SELECT is_default FROM ai_prompts WHERE id = ?',
       [id]
     );
@@ -146,7 +146,7 @@ router.put('/:id', async (req, res) => {
       return res.status(404).json({ success: false, message: 'Prompt não encontrado' });
     }
     
-    const result = await db.executeQuery(
+    const result = await db.query(
       'UPDATE ai_prompts SET name = ?, prompt = ?, description = ?, variables = ?, is_active = ? WHERE id = ?',
       [name, prompt, description || null, JSON.stringify(variables || []), isActive ? 1 : 0, id]
     );
@@ -174,7 +174,7 @@ router.delete('/:id', async (req, res) => {
     if (!db.pool) await db.createConnection();
     
     // Check if prompt is default
-    const existing = await db.executeQuery(
+    const existing = await db.query(
       'SELECT is_default FROM ai_prompts WHERE id = ?',
       [id]
     );
@@ -187,7 +187,7 @@ router.delete('/:id', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Não é possível deletar prompts padrão' });
     }
     
-    const result = await db.executeQuery(
+    const result = await db.query(
       'DELETE FROM ai_prompts WHERE id = ?',
       [id]
     );
@@ -211,7 +211,7 @@ router.post('/:id/reset', async (req, res) => {
     if (!db.pool) await db.createConnection();
     
     // Get the current prompt info
-    const current = await db.executeQuery(
+    const current = await db.query(
       'SELECT name, category FROM ai_prompts WHERE id = ?',
       [id]
     );
@@ -221,7 +221,7 @@ router.post('/:id/reset', async (req, res) => {
     }
     
     // Find default prompt
-    const defaultPrompt = await db.executeQuery(
+    const defaultPrompt = await db.query(
       'SELECT prompt, description, variables FROM ai_prompts WHERE name = ? AND category = ? AND is_default = TRUE',
       [current[0].name, current[0].category]
     );
@@ -231,7 +231,7 @@ router.post('/:id/reset', async (req, res) => {
     }
     
     // Update to default values
-    await db.executeQuery(
+    await db.query(
       'UPDATE ai_prompts SET prompt = ?, description = ?, variables = ? WHERE id = ?',
       [defaultPrompt[0].prompt, defaultPrompt[0].description, defaultPrompt[0].variables, id]
     );

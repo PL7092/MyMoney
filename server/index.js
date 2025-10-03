@@ -283,7 +283,7 @@ app.put('/api/user-settings', async (req, res) => {
 app.get('/api/categories', async (req, res) => {
   try {
     if (!db.pool) await db.createConnection();
-    const categories = await db.executeQuery('SELECT * FROM categories WHERE user_id IS NULL OR user_id = ?', [1]);
+    const categories = await db.query('SELECT * FROM categories WHERE user_id IS NULL OR user_id = ?', [1]);
     res.json({ success: true, data: categories });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -294,11 +294,11 @@ app.post('/api/categories', async (req, res) => {
   try {
     if (!db.pool) await db.createConnection();
     const { name, color, icon } = req.body;
-    const result = await db.executeQuery(
+    const result = await db.query(
       'INSERT INTO categories (name, color, icon, user_id) VALUES (?, ?, ?, ?)',
       [name, color || '#6366f1', icon || 'folder', 1]
     );
-    const category = await db.executeQuery('SELECT * FROM categories WHERE id = ?', [result.insertId]);
+    const category = await db.query('SELECT * FROM categories WHERE id = ?', [result.insertId]);
     res.json({ success: true, data: category[0] });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -310,11 +310,11 @@ app.put('/api/categories/:id', async (req, res) => {
     if (!db.pool) await db.createConnection();
     const { id } = req.params;
     const { name, color, icon } = req.body;
-    await db.executeQuery(
+    await db.query(
       'UPDATE categories SET name = ?, color = ?, icon = ? WHERE id = ? AND (user_id = ? OR user_id IS NULL)',
       [name, color, icon, id, 1]
     );
-    const category = await db.executeQuery('SELECT * FROM categories WHERE id = ?', [id]);
+    const category = await db.query('SELECT * FROM categories WHERE id = ?', [id]);
     res.json({ success: true, data: category[0] });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -325,7 +325,7 @@ app.delete('/api/categories/:id', async (req, res) => {
   try {
     if (!db.pool) await db.createConnection();
     const { id } = req.params;
-    await db.executeQuery('DELETE FROM categories WHERE id = ? AND user_id = ?', [id, 1]);
+    await db.query('DELETE FROM categories WHERE id = ? AND user_id = ?', [id, 1]);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -336,7 +336,7 @@ app.delete('/api/categories/:id', async (req, res) => {
 app.get('/api/accounts', async (req, res) => {
   try {
     if (!db.pool) await db.createConnection();
-    const accounts = await db.executeQuery('SELECT * FROM accounts WHERE user_id = ?', [1]);
+    const accounts = await db.query('SELECT * FROM accounts WHERE user_id = ?', [1]);
     res.json({ success: true, data: accounts });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -347,11 +347,11 @@ app.post('/api/accounts', async (req, res) => {
   try {
     if (!db.pool) await db.createConnection();
     const { name, type, balance, currency } = req.body;
-    const result = await db.executeQuery(
+    const result = await db.query(
       'INSERT INTO accounts (name, type, balance, currency, user_id) VALUES (?, ?, ?, ?, ?)',
       [name, type, balance || 0, currency || 'EUR', 1]
     );
-    const account = await db.executeQuery('SELECT * FROM accounts WHERE id = ?', [result.insertId]);
+    const account = await db.query('SELECT * FROM accounts WHERE id = ?', [result.insertId]);
     res.json({ success: true, data: account[0] });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -363,11 +363,11 @@ app.put('/api/accounts/:id', async (req, res) => {
     if (!db.pool) await db.createConnection();
     const { id } = req.params;
     const { name, type, balance, currency } = req.body;
-    await db.executeQuery(
+    await db.query(
       'UPDATE accounts SET name = ?, type = ?, balance = ?, currency = ? WHERE id = ? AND user_id = ?',
       [name, type, balance, currency, id, 1]
     );
-    const account = await db.executeQuery('SELECT * FROM accounts WHERE id = ?', [id]);
+    const account = await db.query('SELECT * FROM accounts WHERE id = ?', [id]);
     res.json({ success: true, data: account[0] });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -378,7 +378,7 @@ app.delete('/api/accounts/:id', async (req, res) => {
   try {
     if (!db.pool) await db.createConnection();
     const { id } = req.params;
-    await db.executeQuery('DELETE FROM accounts WHERE id = ? AND user_id = ?', [id, 1]);
+    await db.query('DELETE FROM accounts WHERE id = ? AND user_id = ?', [id, 1]);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -389,7 +389,7 @@ app.delete('/api/accounts/:id', async (req, res) => {
 app.get('/api/transactions', async (req, res) => {
   try {
     if (!db.pool) await db.createConnection();
-    const transactions = await db.executeQuery(`
+    const transactions = await db.query(`
       SELECT t.*, c.name as category_name, c.color as category_color
       FROM transactions t
       LEFT JOIN categories c ON t.category_id = c.id
@@ -406,19 +406,19 @@ app.post('/api/transactions', async (req, res) => {
   try {
     if (!db.pool) await db.createConnection();
     const { amount, description, type, category_id, account_id, date } = req.body;
-    const result = await db.executeQuery(
+    const result = await db.query(
       'INSERT INTO transactions (amount, description, type, category_id, account_id, date, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
       [amount, description, type, category_id, account_id, date, 1]
     );
     
     // Update account balance
     const balanceChange = type === 'income' ? amount : -amount;
-    await db.executeQuery(
+    await db.query(
       'UPDATE accounts SET balance = balance + ? WHERE id = ?',
       [balanceChange, account_id]
     );
     
-    const transaction = await db.executeQuery(`
+    const transaction = await db.query(`
       SELECT t.*, c.name as category_name, c.color as category_color
       FROM transactions t
       LEFT JOIN categories c ON t.category_id = c.id
@@ -438,22 +438,22 @@ app.put('/api/transactions/:id', async (req, res) => {
     const { amount, description, type, category_id, account_id, date } = req.body;
     
     // Get old transaction to reverse balance change
-    const oldTransaction = await db.executeQuery('SELECT * FROM transactions WHERE id = ?', [id]);
+    const oldTransaction = await db.query('SELECT * FROM transactions WHERE id = ?', [id]);
     if (oldTransaction.length > 0) {
       const oldBalanceChange = oldTransaction[0].type === 'income' ? -oldTransaction[0].amount : oldTransaction[0].amount;
-      await db.executeQuery('UPDATE accounts SET balance = balance + ? WHERE id = ?', [oldBalanceChange, oldTransaction[0].account_id]);
+      await db.query('UPDATE accounts SET balance = balance + ? WHERE id = ?', [oldBalanceChange, oldTransaction[0].account_id]);
     }
     
-    await db.executeQuery(
+    await db.query(
       'UPDATE transactions SET amount = ?, description = ?, type = ?, category_id = ?, account_id = ?, date = ? WHERE id = ? AND user_id = ?',
       [amount, description, type, category_id, account_id, date, id, 1]
     );
     
     // Apply new balance change
     const balanceChange = type === 'income' ? amount : -amount;
-    await db.executeQuery('UPDATE accounts SET balance = balance + ? WHERE id = ?', [balanceChange, account_id]);
+    await db.query('UPDATE accounts SET balance = balance + ? WHERE id = ?', [balanceChange, account_id]);
     
-    const transaction = await db.executeQuery(`
+    const transaction = await db.query(`
       SELECT t.*, c.name as category_name, c.color as category_color
       FROM transactions t
       LEFT JOIN categories c ON t.category_id = c.id
@@ -472,13 +472,13 @@ app.delete('/api/transactions/:id', async (req, res) => {
     const { id } = req.params;
     
     // Get transaction to reverse balance change
-    const transaction = await db.executeQuery('SELECT * FROM transactions WHERE id = ? AND user_id = ?', [id, 1]);
+    const transaction = await db.query('SELECT * FROM transactions WHERE id = ? AND user_id = ?', [id, 1]);
     if (transaction.length > 0) {
       const balanceChange = transaction[0].type === 'income' ? -transaction[0].amount : transaction[0].amount;
-      await db.executeQuery('UPDATE accounts SET balance = balance + ? WHERE id = ?', [balanceChange, transaction[0].account_id]);
+      await db.query('UPDATE accounts SET balance = balance + ? WHERE id = ?', [balanceChange, transaction[0].account_id]);
     }
     
-    await db.executeQuery('DELETE FROM transactions WHERE id = ? AND user_id = ?', [id, 1]);
+    await db.query('DELETE FROM transactions WHERE id = ? AND user_id = ?', [id, 1]);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -489,7 +489,7 @@ app.delete('/api/transactions/:id', async (req, res) => {
 app.get('/api/budgets', async (req, res) => {
   try {
     if (!db.pool) await db.createConnection();
-    const budgets = await db.executeQuery(`
+    const budgets = await db.query(`
       SELECT b.*, c.name as category_name, c.color as category_color
       FROM budgets b
       LEFT JOIN categories c ON b.category_id = c.id
@@ -506,11 +506,11 @@ app.post('/api/budgets', async (req, res) => {
   try {
     if (!db.pool) await db.createConnection();
     const { name, amount, category_id, period, start_date, end_date } = req.body;
-    const result = await db.executeQuery(
+    const result = await db.query(
       'INSERT INTO budgets (name, amount, category_id, period, start_date, end_date, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
       [name, amount, category_id, period, start_date, end_date, 1]
     );
-    const budget = await db.executeQuery(`
+    const budget = await db.query(`
       SELECT b.*, c.name as category_name, c.color as category_color
       FROM budgets b
       LEFT JOIN categories c ON b.category_id = c.id
@@ -527,11 +527,11 @@ app.put('/api/budgets/:id', async (req, res) => {
     if (!db.pool) await db.createConnection();
     const { id } = req.params;
     const { name, amount, category_id, period, start_date, end_date } = req.body;
-    await db.executeQuery(
+    await db.query(
       'UPDATE budgets SET name = ?, amount = ?, category_id = ?, period = ?, start_date = ?, end_date = ? WHERE id = ? AND user_id = ?',
       [name, amount, category_id, period, start_date, end_date, id, 1]
     );
-    const budget = await db.executeQuery(`
+    const budget = await db.query(`
       SELECT b.*, c.name as category_name, c.color as category_color
       FROM budgets b
       LEFT JOIN categories c ON b.category_id = c.id
@@ -547,7 +547,7 @@ app.delete('/api/budgets/:id', async (req, res) => {
   try {
     if (!db.pool) await db.createConnection();
     const { id } = req.params;
-    await db.executeQuery('DELETE FROM budgets WHERE id = ? AND user_id = ?', [id, 1]);
+    await db.query('DELETE FROM budgets WHERE id = ? AND user_id = ?', [id, 1]);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -558,7 +558,7 @@ app.delete('/api/budgets/:id', async (req, res) => {
 app.get('/api/investments', async (req, res) => {
   try {
     if (!db.pool) await db.createConnection();
-    const investments = await db.executeQuery(`
+    const investments = await db.query(`
       SELECT i.*, a.name as account_name
       FROM investments i
       LEFT JOIN accounts a ON i.account_id = a.id
@@ -575,11 +575,11 @@ app.post('/api/investments', async (req, res) => {
   try {
     if (!db.pool) await db.createConnection();
     const { name, symbol, type, quantity, purchase_price, current_price, purchase_date, account_id } = req.body;
-    const result = await db.executeQuery(
+    const result = await db.query(
       'INSERT INTO investments (name, symbol, type, quantity, purchase_price, current_price, purchase_date, account_id, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [name, symbol, type, quantity || 0, purchase_price || 0, current_price || purchase_price || 0, purchase_date, account_id, 1]
     );
-    const investment = await db.executeQuery(`
+    const investment = await db.query(`
       SELECT i.*, a.name as account_name
       FROM investments i
       LEFT JOIN accounts a ON i.account_id = a.id
@@ -596,11 +596,11 @@ app.put('/api/investments/:id', async (req, res) => {
     if (!db.pool) await db.createConnection();
     const { id } = req.params;
     const { name, symbol, type, quantity, purchase_price, current_price, purchase_date, account_id } = req.body;
-    await db.executeQuery(
+    await db.query(
       'UPDATE investments SET name = ?, symbol = ?, type = ?, quantity = ?, purchase_price = ?, current_price = ?, purchase_date = ?, account_id = ? WHERE id = ? AND user_id = ?',
       [name, symbol, type, quantity, purchase_price, current_price, purchase_date, account_id, id, 1]
     );
-    const investment = await db.executeQuery(`
+    const investment = await db.query(`
       SELECT i.*, a.name as account_name
       FROM investments i
       LEFT JOIN accounts a ON i.account_id = a.id
@@ -616,7 +616,7 @@ app.delete('/api/investments/:id', async (req, res) => {
   try {
     if (!db.pool) await db.createConnection();
     const { id } = req.params;
-    await db.executeQuery('DELETE FROM investments WHERE id = ? AND user_id = ?', [id, 1]);
+    await db.query('DELETE FROM investments WHERE id = ? AND user_id = ?', [id, 1]);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -628,7 +628,7 @@ app.get('/api/recurring-transactions', async (req, res) => {
   console.log('DEBUG: Recurring transactions route called');
   try {
     if (!db.pool) await db.createConnection();
-    const recurringTransactions = await db.executeQuery(`
+    const recurringTransactions = await db.query(`
       SELECT rt.*, c.name as category_name, c.color as category_color
       FROM recurring_transactions rt
       LEFT JOIN categories c ON rt.category_id = c.id
@@ -646,11 +646,11 @@ app.post('/api/recurring-transactions', async (req, res) => {
   try {
     if (!db.pool) await db.createConnection();
     const { amount, description, type, frequency, category_id, account_id, start_date, end_date, next_occurrence } = req.body;
-    const result = await db.executeQuery(
+    const result = await db.query(
       'INSERT INTO recurring_transactions (amount, description, type, frequency, category_id, account_id, start_date, end_date, next_occurrence, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [amount, description, type, frequency, category_id, account_id, start_date, end_date, next_occurrence || start_date, 1]
     );
-    const recurringTransaction = await db.executeQuery(`
+    const recurringTransaction = await db.query(`
       SELECT rt.*, c.name as category_name, c.color as category_color
       FROM recurring_transactions rt
       LEFT JOIN categories c ON rt.category_id = c.id
@@ -667,11 +667,11 @@ app.put('/api/recurring-transactions/:id', async (req, res) => {
     if (!db.pool) await db.createConnection();
     const { id } = req.params;
     const { amount, description, type, frequency, category_id, account_id, start_date, end_date, next_occurrence, is_active } = req.body;
-    await db.executeQuery(
+    await db.query(
       'UPDATE recurring_transactions SET amount = ?, description = ?, type = ?, frequency = ?, category_id = ?, account_id = ?, start_date = ?, end_date = ?, next_occurrence = ?, is_active = ? WHERE id = ? AND user_id = ?',
       [amount, description, type, frequency, category_id, account_id, start_date, end_date, next_occurrence, is_active, id, 1]
     );
-    const recurringTransaction = await db.executeQuery(`
+    const recurringTransaction = await db.query(`
       SELECT rt.*, c.name as category_name, c.color as category_color
       FROM recurring_transactions rt
       LEFT JOIN categories c ON rt.category_id = c.id
@@ -687,7 +687,7 @@ app.delete('/api/recurring-transactions/:id', async (req, res) => {
   try {
     if (!db.pool) await db.createConnection();
     const { id } = req.params;
-    await db.executeQuery('DELETE FROM recurring_transactions WHERE id = ? AND user_id = ?', [id, 1]);
+    await db.query('DELETE FROM recurring_transactions WHERE id = ? AND user_id = ?', [id, 1]);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -698,7 +698,7 @@ app.delete('/api/recurring-transactions/:id', async (req, res) => {
 app.get('/api/assets', async (req, res) => {
   try {
     if (!db.pool) await db.createConnection();
-    const assets = await db.executeQuery(`
+    const assets = await db.query(`
       SELECT * FROM assets
       WHERE user_id = ?
       ORDER BY created_at DESC
@@ -713,11 +713,11 @@ app.post('/api/assets', async (req, res) => {
   try {
     if (!db.pool) await db.createConnection();
     const { name, type, purchase_price, current_value, purchase_date, description, depreciation_rate } = req.body;
-    const result = await db.executeQuery(
+    const result = await db.query(
       'INSERT INTO assets (name, type, purchase_price, current_value, purchase_date, description, depreciation_rate, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
       [name, type, purchase_price, current_value || purchase_price, purchase_date, description, depreciation_rate || 0, 1]
     );
-    const asset = await db.executeQuery('SELECT * FROM assets WHERE id = ?', [result.insertId]);
+    const asset = await db.query('SELECT * FROM assets WHERE id = ?', [result.insertId]);
     res.json({ success: true, data: asset[0] });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -729,11 +729,11 @@ app.put('/api/assets/:id', async (req, res) => {
     if (!db.pool) await db.createConnection();
     const { id } = req.params;
     const { name, type, purchase_price, current_value, purchase_date, description, depreciation_rate } = req.body;
-    await db.executeQuery(
+    await db.query(
       'UPDATE assets SET name = ?, type = ?, purchase_price = ?, current_value = ?, purchase_date = ?, description = ?, depreciation_rate = ? WHERE id = ? AND user_id = ?',
       [name, type, purchase_price, current_value, purchase_date, description, depreciation_rate, id, 1]
     );
-    const asset = await db.executeQuery('SELECT * FROM assets WHERE id = ?', [id]);
+    const asset = await db.query('SELECT * FROM assets WHERE id = ?', [id]);
     res.json({ success: true, data: asset[0] });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -744,7 +744,7 @@ app.delete('/api/assets/:id', async (req, res) => {
   try {
     if (!db.pool) await db.createConnection();
     const { id } = req.params;
-    await db.executeQuery('DELETE FROM assets WHERE id = ? AND user_id = ?', [id, 1]);
+    await db.query('DELETE FROM assets WHERE id = ? AND user_id = ?', [id, 1]);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -755,7 +755,7 @@ app.delete('/api/assets/:id', async (req, res) => {
 app.get('/api/savings-goals', async (req, res) => {
   try {
     if (!db.pool) await db.createConnection();
-    const savingsGoals = await db.executeQuery(`
+    const savingsGoals = await db.query(`
       SELECT sg.*, a.name as account_name
       FROM savings_goals sg
       LEFT JOIN accounts a ON sg.account_id = a.id
@@ -772,11 +772,11 @@ app.post('/api/savings-goals', async (req, res) => {
   try {
     if (!db.pool) await db.createConnection();
     const { name, target_amount, current_amount, target_date, description, priority, account_id } = req.body;
-    const result = await db.executeQuery(
+    const result = await db.query(
       'INSERT INTO savings_goals (name, target_amount, current_amount, target_date, description, priority, account_id, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
       [name, target_amount, current_amount || 0, target_date, description, priority || 'medium', account_id, 1]
     );
-    const savingsGoal = await db.executeQuery(`
+    const savingsGoal = await db.query(`
       SELECT sg.*, a.name as account_name
       FROM savings_goals sg
       LEFT JOIN accounts a ON sg.account_id = a.id
@@ -793,11 +793,11 @@ app.put('/api/savings-goals/:id', async (req, res) => {
     if (!db.pool) await db.createConnection();
     const { id } = req.params;
     const { name, target_amount, current_amount, target_date, description, priority, account_id, is_completed } = req.body;
-    await db.executeQuery(
+    await db.query(
       'UPDATE savings_goals SET name = ?, target_amount = ?, current_amount = ?, target_date = ?, description = ?, priority = ?, account_id = ?, is_completed = ? WHERE id = ? AND user_id = ?',
       [name, target_amount, current_amount, target_date, description, priority, account_id, is_completed, id, 1]
     );
-    const savingsGoal = await db.executeQuery(`
+    const savingsGoal = await db.query(`
       SELECT sg.*, a.name as account_name
       FROM savings_goals sg
       LEFT JOIN accounts a ON sg.account_id = a.id
@@ -813,7 +813,7 @@ app.delete('/api/savings-goals/:id', async (req, res) => {
   try {
     if (!db.pool) await db.createConnection();
     const { id } = req.params;
-    await db.executeQuery('DELETE FROM savings_goals WHERE id = ? AND user_id = ?', [id, 1]);
+    await db.query('DELETE FROM savings_goals WHERE id = ? AND user_id = ?', [id, 1]);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -824,7 +824,7 @@ app.delete('/api/savings-goals/:id', async (req, res) => {
 app.get('/api/entities', async (req, res) => {
   try {
     if (!db.pool) await db.createConnection();
-    const entities = await db.executeQuery(`
+    const entities = await db.query(`
       SELECT * FROM entities
       WHERE user_id = ?
       ORDER BY name ASC
@@ -839,11 +839,11 @@ app.post('/api/entities', async (req, res) => {
   try {
     if (!db.pool) await db.createConnection();
     const { name, type } = req.body;
-    const result = await db.executeQuery(
+    const result = await db.query(
       'INSERT INTO entities (name, type, user_id) VALUES (?, ?, ?)',
       [name, type || 'vendor', 1]
     );
-    const entity = await db.executeQuery('SELECT * FROM entities WHERE id = ?', [result.insertId]);
+    const entity = await db.query('SELECT * FROM entities WHERE id = ?', [result.insertId]);
     res.json({ success: true, data: entity[0] });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -855,11 +855,11 @@ app.put('/api/entities/:id', async (req, res) => {
     if (!db.pool) await db.createConnection();
     const { id } = req.params;
     const { name, type, is_active } = req.body;
-    await db.executeQuery(
+    await db.query(
       'UPDATE entities SET name = ?, type = ?, is_active = ? WHERE id = ? AND user_id = ?',
       [name, type, is_active, id, 1]
     );
-    const entity = await db.executeQuery('SELECT * FROM entities WHERE id = ?', [id]);
+    const entity = await db.query('SELECT * FROM entities WHERE id = ?', [id]);
     res.json({ success: true, data: entity[0] });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -870,7 +870,7 @@ app.delete('/api/entities/:id', async (req, res) => {
   try {
     if (!db.pool) await db.createConnection();
     const { id } = req.params;
-    await db.executeQuery('DELETE FROM entities WHERE id = ? AND user_id = ?', [id, 1]);
+    await db.query('DELETE FROM entities WHERE id = ? AND user_id = ?', [id, 1]);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -881,7 +881,7 @@ app.delete('/api/entities/:id', async (req, res) => {
 app.get('/api/ai-rules', async (req, res) => {
   try {
     if (!db.pool) await db.createConnection();
-    const aiRules = await db.executeQuery(`
+    const aiRules = await db.query(`
       SELECT * FROM ai_rules
       WHERE user_id = ?
       ORDER BY created_at DESC
@@ -896,11 +896,11 @@ app.post('/api/ai-rules', async (req, res) => {
   try {
     if (!db.pool) await db.createConnection();
     const { name, description, conditions, actions } = req.body;
-    const result = await db.executeQuery(
+    const result = await db.query(
       'INSERT INTO ai_rules (name, description, conditions, actions, user_id) VALUES (?, ?, ?, ?, ?)',
       [name, description, JSON.stringify(conditions), JSON.stringify(actions), 1]
     );
-    const aiRule = await db.executeQuery('SELECT * FROM ai_rules WHERE id = ?', [result.insertId]);
+    const aiRule = await db.query('SELECT * FROM ai_rules WHERE id = ?', [result.insertId]);
     res.json({ success: true, data: aiRule[0] });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -912,11 +912,11 @@ app.put('/api/ai-rules/:id', async (req, res) => {
     if (!db.pool) await db.createConnection();
     const { id } = req.params;
     const { name, description, conditions, actions, is_active } = req.body;
-    await db.executeQuery(
+    await db.query(
       'UPDATE ai_rules SET name = ?, description = ?, conditions = ?, actions = ?, is_active = ? WHERE id = ? AND user_id = ?',
       [name, description, JSON.stringify(conditions), JSON.stringify(actions), is_active, id, 1]
     );
-    const aiRule = await db.executeQuery('SELECT * FROM ai_rules WHERE id = ?', [id]);
+    const aiRule = await db.query('SELECT * FROM ai_rules WHERE id = ?', [id]);
     res.json({ success: true, data: aiRule[0] });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -927,7 +927,7 @@ app.delete('/api/ai-rules/:id', async (req, res) => {
   try {
     if (!db.pool) await db.createConnection();
     const { id } = req.params;
-    await db.executeQuery('DELETE FROM ai_rules WHERE id = ? AND user_id = ?', [id, 1]);
+    await db.query('DELETE FROM ai_rules WHERE id = ? AND user_id = ?', [id, 1]);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -958,7 +958,7 @@ app.post('/api/import/transactions', async (req, res) => {
       try {
         // Check for duplicates if smart import is enabled
         if (smartImport) {
-          const existing = await db.executeQuery(`
+          const existing = await db.query(`
             SELECT id FROM transactions 
             WHERE description = ? AND amount = ? AND date = ? AND user_id = ?
           `, [transaction.description, transaction.amount, transaction.date, 1]);
@@ -970,7 +970,7 @@ app.post('/api/import/transactions', async (req, res) => {
         }
 
         // Insert transaction
-        const result = await db.executeQuery(
+        const result = await db.query(
           'INSERT INTO transactions (amount, description, type, category_id, account_id, date, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
           [
             transaction.amount, 
@@ -986,7 +986,7 @@ app.post('/api/import/transactions', async (req, res) => {
         // Update account balance if account specified
         if (transaction.account_id) {
           const balanceChange = (transaction.type || 'expense') === 'income' ? transaction.amount : -transaction.amount;
-          await db.executeQuery(
+          await db.query(
             'UPDATE accounts SET balance = balance + ? WHERE id = ?',
             [balanceChange, transaction.account_id]
           );
@@ -1019,7 +1019,7 @@ app.get('/api/reports/summary', async (req, res) => {
     const { startDate, endDate } = req.query;
     
     // Get basic financial summary
-    const transactions = await db.executeQuery(`
+    const transactions = await db.query(`
       SELECT 
         SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as total_income,
         SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as total_expenses,
@@ -1030,7 +1030,7 @@ app.get('/api/reports/summary', async (req, res) => {
       ${endDate ? 'AND date <= ?' : ''}
     `, [1, ...(startDate ? [startDate] : []), ...(endDate ? [endDate] : [])]);
     
-    const accounts = await db.executeQuery('SELECT SUM(balance) as total_balance FROM accounts WHERE user_id = ?', [1]);
+    const accounts = await db.query('SELECT SUM(balance) as total_balance FROM accounts WHERE user_id = ?', [1]);
     
     res.json({
       success: true,
@@ -1056,7 +1056,7 @@ app.post('/api/init-sample-data', async (req, res) => {
     if (!db.pool) await db.createConnection();
     
     // Check if data already exists
-    const existingTransactions = await db.executeQuery('SELECT COUNT(*) as count FROM transactions WHERE user_id = ?', [1]);
+    const existingTransactions = await db.query('SELECT COUNT(*) as count FROM transactions WHERE user_id = ?', [1]);
     if (existingTransactions[0].count > 0) {
       return res.json({ success: true, message: 'Sample data already exists' });
     }
@@ -1073,7 +1073,7 @@ app.post('/api/init-sample-data', async (req, res) => {
 
     const categoryIds = [];
     for (const cat of categories) {
-      const result = await db.executeQuery(
+      const result = await db.query(
         'INSERT INTO categories (name, type, color, icon, user_id) VALUES (?, ?, ?, ?, ?)',
         [cat.name, cat.type, cat.color, cat.icon, 1]
       );
@@ -1089,7 +1089,7 @@ app.post('/api/init-sample-data', async (req, res) => {
 
     const accountIds = [];
     for (const acc of accounts) {
-      const result = await db.executeQuery(
+      const result = await db.query(
         'INSERT INTO accounts (name, type, balance, currency, user_id) VALUES (?, ?, ?, ?, ?)',
         [acc.name, acc.type, acc.balance, acc.currency, 1]
       );
@@ -1113,21 +1113,21 @@ app.post('/api/init-sample-data', async (req, res) => {
     for (const trans of transactions) {
       const date = new Date();
       date.setDate(date.getDate() - trans.days_ago);
-      await db.executeQuery(
+      await db.query(
         'INSERT INTO transactions (amount, description, type, category_id, account_id, date, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
         [Math.abs(trans.amount), trans.description, trans.type, categoryIds[trans.category_idx], accountIds[0], date.toISOString().split('T')[0], 1]
       );
     }
 
     // Sample budget
-    await db.executeQuery(
+    await db.query(
       'INSERT INTO budgets (name, amount, category_id, period, start_date, end_date, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
       ['Orçamento Alimentação', 400.00, categoryIds[0], 'monthly', new Date().toISOString().split('T')[0], 
        new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString().split('T')[0], 1]
     );
 
     // Sample investment
-    await db.executeQuery(
+    await db.query(
       'INSERT INTO investments (name, symbol, type, quantity, purchase_price, current_price, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
       ['Apple Inc.', 'AAPL', 'stock', 10, 150.00, 175.00, 1]
     );
@@ -1135,7 +1135,7 @@ app.post('/api/init-sample-data', async (req, res) => {
     // Sample savings goal
     const targetDate = new Date();
     targetDate.setFullYear(targetDate.getFullYear() + 1);
-    await db.executeQuery(
+    await db.query(
       'INSERT INTO savings_goals (name, target_amount, current_amount, target_date, description, priority, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
       ['Férias de Verão', 3000.00, 1200.00, targetDate.toISOString().split('T')[0], 'Viagem para a Grécia', 'high', 1]
     );
@@ -1151,7 +1151,7 @@ app.post('/api/init-sample-data', async (req, res) => {
 app.get('/api/entities', async (req, res) => {
   try {
     if (!db.pool) await db.createConnection();
-    const entities = await db.executeQuery('SELECT DISTINCT entity FROM transactions WHERE entity IS NOT NULL ORDER BY entity');
+    const entities = await db.query('SELECT DISTINCT entity FROM transactions WHERE entity IS NOT NULL ORDER BY entity');
     const entityList = entities.map(row => ({ name: row.entity, count: 1 }));
     res.json({ success: true, data: entityList });
   } catch (error) {
@@ -1167,7 +1167,7 @@ app.get('/api/entities', async (req, res) => {
 app.get('/api/savings-goals', async (req, res) => {
   try {
     if (!db.pool) await db.createConnection();
-    const goals = await db.executeQuery('SELECT * FROM savings_goals WHERE user_id = ? ORDER BY created_at DESC', [1]);
+    const goals = await db.query('SELECT * FROM savings_goals WHERE user_id = ? ORDER BY created_at DESC', [1]);
     res.json({ success: true, data: goals });
   } catch (error) {
     console.error('Error fetching savings goals:', error);
@@ -1179,11 +1179,11 @@ app.post('/api/savings-goals', async (req, res) => {
   try {
     if (!db.pool) await db.createConnection();
     const { name, target_amount, target_date, description, priority } = req.body;
-    const result = await db.executeQuery(
+    const result = await db.query(
       'INSERT INTO savings_goals (name, target_amount, current_amount, target_date, description, priority, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
       [name, target_amount, 0, target_date, description || '', priority || 'medium', 1]
     );
-    const goal = await db.executeQuery('SELECT * FROM savings_goals WHERE id = ?', [result.insertId]);
+    const goal = await db.query('SELECT * FROM savings_goals WHERE id = ?', [result.insertId]);
     res.json({ success: true, data: goal[0] });
   } catch (error) {
     console.error('Error creating savings goal:', error);
@@ -1204,7 +1204,7 @@ app.post('/api/import/transactions', async (req, res) => {
     for (const transaction of transactions) {
       try {
         // Check for duplicates
-        const existing = await db.executeQuery(
+        const existing = await db.query(
           'SELECT id FROM transactions WHERE description = ? AND amount = ? AND date = ? AND account_id = ?',
           [transaction.description, transaction.amount, transaction.date, transaction.account_id]
         );
@@ -1215,7 +1215,7 @@ app.post('/api/import/transactions', async (req, res) => {
         }
         
         // Insert transaction
-        await db.executeQuery(`
+        await db.query(`
           INSERT INTO transactions (type, amount, description, category_id, account_id, date, entity, user_id, created_at, updated_at)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
         `, [
@@ -1289,7 +1289,7 @@ const initializeWithRetry = async (retries = 10, delay = 5000) => {
       });
       
       // Test the connection
-      const testResult = await db.executeQuery('SELECT 1 as test');
+      const testResult = await db.query('SELECT 1 as test');
       console.log('✅ Database connection successful:', testResult);
       
       // Initialize schema
@@ -1298,7 +1298,7 @@ const initializeWithRetry = async (retries = 10, delay = 5000) => {
       
       // Ensure default user (id=1) exists to satisfy FK references
       try {
-        await db.executeQuery(
+        await db.query(
           'INSERT IGNORE INTO users (id, email, name, password_hash) VALUES (?, ?, ?, ?)',
           [1, 'system@local', 'System', 'system']
         );
@@ -1306,7 +1306,7 @@ const initializeWithRetry = async (retries = 10, delay = 5000) => {
         
         // Seed sample data only when explicitly enabled
         if (process.env.SEED_SAMPLE_DATA === 'true') {
-          const existingData = await db.executeQuery('SELECT COUNT(*) as count FROM transactions WHERE user_id = ?', [1]);
+          const existingData = await db.query('SELECT COUNT(*) as count FROM transactions WHERE user_id = ?', [1]);
           if (existingData[0].count === 0) {
             console.log('🔄 Seeding sample data (SEED_SAMPLE_DATA=true)...');
             const response = await fetch(`http://localhost:${PORT}/api/init-sample-data`, {

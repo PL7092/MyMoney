@@ -576,7 +576,7 @@ router.post('/budgets', validateRequest(schemas.budget), async (req, res) => {
 // ========== RECURRING TRANSACTIONS CRUD ==========
 router.get('/recurring-transactions', cacheMiddleware(300), async (req, res) => {
   try {
-    const recurringTransactions = await db.executeQuery(`
+    const recurringTransactions = await db.query(`
       SELECT rt.*, c.name as category_name, c.color as category_color
       FROM recurring_transactions rt
       LEFT JOIN categories c ON rt.category_id = c.id
@@ -600,12 +600,12 @@ router.post('/recurring-transactions', validateRequest(schemas.transaction), asy
   try {
     const { amount, description, type, frequency, category_id, account_id, start_date, end_date, next_occurrence } = req.body;
     
-    const result = await db.executeQuery(
+    const result = await db.query(
       'INSERT INTO recurring_transactions (amount, description, type, frequency, category_id, account_id, start_date, end_date, next_occurrence, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [amount, description, type, frequency, category_id, account_id, start_date, end_date, next_occurrence || start_date, req.user.userId]
     );
     
-    const recurringTransaction = await db.executeQuery(`
+    const recurringTransaction = await db.query(`
       SELECT rt.*, c.name as category_name, c.color as category_color
       FROM recurring_transactions rt
       LEFT JOIN categories c ON rt.category_id = c.id
@@ -629,12 +629,12 @@ router.put('/recurring-transactions/:id', validateRequest(schemas.transaction), 
     const { id } = req.params;
     const { amount, description, type, frequency, category_id, account_id, start_date, end_date, next_occurrence, is_active } = req.body;
     
-    await db.executeQuery(
+    await db.query(
       'UPDATE recurring_transactions SET amount = ?, description = ?, type = ?, frequency = ?, category_id = ?, account_id = ?, start_date = ?, end_date = ?, next_occurrence = ?, is_active = ? WHERE id = ? AND user_id = ?',
       [amount, description, type, frequency, category_id, account_id, start_date, end_date, next_occurrence, is_active, id, req.user.userId]
     );
     
-    const recurringTransaction = await db.executeQuery(`
+    const recurringTransaction = await db.query(`
       SELECT rt.*, c.name as category_name, c.color as category_color
       FROM recurring_transactions rt
       LEFT JOIN categories c ON rt.category_id = c.id
@@ -657,7 +657,7 @@ router.delete('/recurring-transactions/:id', async (req, res) => {
   try {
     const { id } = req.params;
     
-    await db.executeQuery('DELETE FROM recurring_transactions WHERE id = ? AND user_id = ?', [id, req.user.userId]);
+    await db.query('DELETE FROM recurring_transactions WHERE id = ? AND user_id = ?', [id, req.user.userId]);
     
     logger.info('Deleted recurring transaction', { 
       userId: req.user.userId, 
