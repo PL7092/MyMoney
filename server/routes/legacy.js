@@ -573,6 +573,104 @@ router.post('/budgets', validateRequest(schemas.budget), async (req, res) => {
   }
 });
 
+// ========== RECURRING TRANSACTIONS CRUD ==========
+router.get('/recurring-transactions', cacheMiddleware(300), async (req, res) => {
+  try {
+    const recurringTransactions = await db.executeQuery(`
+      SELECT rt.*, c.name as category_name, c.color as category_color
+      FROM recurring_transactions rt
+      LEFT JOIN categories c ON rt.category_id = c.id
+      WHERE rt.user_id = ?
+      ORDER BY rt.created_at DESC
+    `, [req.user.userId]);
+    
+    logger.info('Retrieved recurring transactions', { 
+      userId: req.user.userId, 
+      count: recurringTransactions.length 
+    });
+    
+    res.json({ success: true, data: recurringTransactions });
+  } catch (error) {
+    logger.error('Failed to retrieve recurring transactions', error, { userId: req.user.userId });
+    res.status(500).json({ success: false, error: 'Failed to retrieve recurring transactions' });
+  }
+});
+
+router.post('/recurring-transactions', validateRequest(schemas.transaction), async (req, res) => {
+  try {
+    const { amount, description, type, frequency, category_id, account_id, start_date, end_date, next_occurrence } = req.body;
+    
+    const result = await db.executeQuery(
+      'INSERT INTO recurring_transactions (amount, description, type, frequency, category_id, account_id, start_date, end_date, next_occurrence, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [amount, description, type, frequency, category_id, account_id, start_date, end_date, next_occurrence || start_date, req.user.userId]
+    );
+    
+    const recurringTransaction = await db.executeQuery(`
+      SELECT rt.*, c.name as category_name, c.color as category_color
+      FROM recurring_transactions rt
+      LEFT JOIN categories c ON rt.category_id = c.id
+      WHERE rt.id = ?
+    `, [result.insertId]);
+    
+    logger.info('Created recurring transaction', { 
+      userId: req.user.userId, 
+      transactionId: result.insertId 
+    });
+    
+    res.json({ success: true, data: recurringTransaction[0] });
+  } catch (error) {
+    logger.error('Failed to create recurring transaction', error, { userId: req.user.userId });
+    res.status(500).json({ success: false, error: 'Failed to create recurring transaction' });
+  }
+});
+
+router.put('/recurring-transactions/:id', validateRequest(schemas.transaction), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { amount, description, type, frequency, category_id, account_id, start_date, end_date, next_occurrence, is_active } = req.body;
+    
+    await db.executeQuery(
+      'UPDATE recurring_transactions SET amount = ?, description = ?, type = ?, frequency = ?, category_id = ?, account_id = ?, start_date = ?, end_date = ?, next_occurrence = ?, is_active = ? WHERE id = ? AND user_id = ?',
+      [amount, description, type, frequency, category_id, account_id, start_date, end_date, next_occurrence, is_active, id, req.user.userId]
+    );
+    
+    const recurringTransaction = await db.executeQuery(`
+      SELECT rt.*, c.name as category_name, c.color as category_color
+      FROM recurring_transactions rt
+      LEFT JOIN categories c ON rt.category_id = c.id
+      WHERE rt.id = ?
+    `, [id]);
+    
+    logger.info('Updated recurring transaction', { 
+      userId: req.user.userId, 
+      transactionId: id 
+    });
+    
+    res.json({ success: true, data: recurringTransaction[0] });
+  } catch (error) {
+    logger.error('Failed to update recurring transaction', error, { userId: req.user.userId });
+    res.status(500).json({ success: false, error: 'Failed to update recurring transaction' });
+  }
+});
+
+router.delete('/recurring-transactions/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    await db.executeQuery('DELETE FROM recurring_transactions WHERE id = ? AND user_id = ?', [id, req.user.userId]);
+    
+    logger.info('Deleted recurring transaction', { 
+      userId: req.user.userId, 
+      transactionId: id 
+    });
+    
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Failed to delete recurring transaction', error, { userId: req.user.userId });
+    res.status(500).json({ success: false, error: 'Failed to delete recurring transaction' });
+  }
+});
+
 // Add more routes as needed for other entities...
 // This is a comprehensive base that covers the main entities
 
