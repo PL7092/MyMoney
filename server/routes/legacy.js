@@ -671,6 +671,104 @@ router.delete('/recurring-transactions/:id', async (req, res) => {
   }
 });
 
+// ========== INVESTMENTS CRUD ==========
+router.get('/investments', cacheMiddleware(300), async (req, res) => {
+  try {
+    const investments = await db.query(`
+      SELECT i.*, a.name as account_name
+      FROM investments i
+      LEFT JOIN accounts a ON i.account_id = a.id
+      WHERE i.user_id = ?
+      ORDER BY i.created_at DESC
+    `, [req.user.userId]);
+    
+    logger.info('Retrieved investments', { 
+      userId: req.user.userId, 
+      count: investments.length 
+    });
+    
+    res.json({ success: true, data: investments });
+  } catch (error) {
+    logger.error('Failed to retrieve investments', error, { userId: req.user.userId });
+    res.status(500).json({ success: false, error: 'Failed to retrieve investments' });
+  }
+});
+
+router.post('/investments', validateRequest(schemas.transaction), async (req, res) => {
+  try {
+    const { name, symbol, type, quantity, purchase_price, current_price, purchase_date, account_id } = req.body;
+    
+    const result = await db.query(
+      'INSERT INTO investments (name, symbol, type, quantity, purchase_price, current_price, purchase_date, account_id, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [name, symbol, type, quantity || 0, purchase_price || 0, current_price || purchase_price || 0, purchase_date, account_id, req.user.userId]
+    );
+    
+    const investment = await db.query(`
+      SELECT i.*, a.name as account_name
+      FROM investments i
+      LEFT JOIN accounts a ON i.account_id = a.id
+      WHERE i.id = ?
+    `, [result.insertId]);
+    
+    logger.info('Created investment', { 
+      userId: req.user.userId, 
+      investmentId: result.insertId 
+    });
+    
+    res.json({ success: true, data: investment[0] });
+  } catch (error) {
+    logger.error('Failed to create investment', error, { userId: req.user.userId });
+    res.status(500).json({ success: false, error: 'Failed to create investment' });
+  }
+});
+
+router.put('/investments/:id', validateRequest(schemas.transaction), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, symbol, type, quantity, purchase_price, current_price, purchase_date, account_id } = req.body;
+    
+    await db.query(
+      'UPDATE investments SET name = ?, symbol = ?, type = ?, quantity = ?, purchase_price = ?, current_price = ?, purchase_date = ?, account_id = ? WHERE id = ? AND user_id = ?',
+      [name, symbol, type, quantity, purchase_price, current_price, purchase_date, account_id, id, req.user.userId]
+    );
+    
+    const investment = await db.query(`
+      SELECT i.*, a.name as account_name
+      FROM investments i
+      LEFT JOIN accounts a ON i.account_id = a.id
+      WHERE i.id = ?
+    `, [id]);
+    
+    logger.info('Updated investment', { 
+      userId: req.user.userId, 
+      investmentId: id 
+    });
+    
+    res.json({ success: true, data: investment[0] });
+  } catch (error) {
+    logger.error('Failed to update investment', error, { userId: req.user.userId });
+    res.status(500).json({ success: false, error: 'Failed to update investment' });
+  }
+});
+
+router.delete('/investments/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    await db.query('DELETE FROM investments WHERE id = ? AND user_id = ?', [id, req.user.userId]);
+    
+    logger.info('Deleted investment', { 
+      userId: req.user.userId, 
+      investmentId: id 
+    });
+    
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Failed to delete investment', error, { userId: req.user.userId });
+    res.status(500).json({ success: false, error: 'Failed to delete investment' });
+  }
+});
+
 // Add more routes as needed for other entities...
 // This is a comprehensive base that covers the main entities
 
