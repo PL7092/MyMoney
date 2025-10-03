@@ -16,8 +16,7 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Serve API routes FIRST
-app.use('/api', express.Router());
+// API routes are defined below
 
 // Health check endpoint with real database status (supports /health and /api/health)
 app.get(['/health', '/api/health'], async (req, res) => {
@@ -625,6 +624,7 @@ app.delete('/api/investments/:id', async (req, res) => {
 
 // ========== RECURRING TRANSACTIONS CRUD ==========
 app.get('/api/recurring-transactions', async (req, res) => {
+  console.log('DEBUG: Recurring transactions route called');
   try {
     if (!db.pool) await db.createConnection();
     const recurringTransactions = await db.executeQuery(`
