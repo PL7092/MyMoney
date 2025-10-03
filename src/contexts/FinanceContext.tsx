@@ -215,6 +215,7 @@ interface FinanceProviderProps {
 }
 
 export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) => {
+  console.log("💰 FinanceProvider initializing");
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -357,6 +358,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
 
   // Load all data from MariaDB on component mount
   useEffect(() => {
+    console.log("💰 FinanceProvider useEffect - calling refreshData");
     refreshData();
   }, []);
   const loadInvestments = async () => {
@@ -1181,9 +1183,11 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
   };
 
   const refreshData = async () => {
+    console.log("💰 refreshData started");
     setIsLoading(true);
     
     try {
+      console.log("💰 Loading all data from MariaDB");
       // Load all data from MariaDB
       await Promise.all([
         loadTransactions(),

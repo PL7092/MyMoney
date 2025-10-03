@@ -22,8 +22,10 @@ import { useLocation } from "react-router-dom";
 
 
 const Index = () => {
+  console.log("📊 Index (Dashboard) component rendering");
   const location = useLocation();
   const { accounts, transactions } = useFinance();
+  console.log("📊 Dashboard data:", { accountsCount: accounts.length, transactionsCount: transactions.length });
 
   // Calculate real statistics from data
   const stats = useMemo(() => {

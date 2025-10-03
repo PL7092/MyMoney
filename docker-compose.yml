@@ -1,4 +1,30 @@
 services:
+  # MariaDB interno
+  mariadb:
+    image: mariadb:10.11
+    container_name: MyMoney-MariaDB
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=rootpassword123
+      - MYSQL_DATABASE=mymoney
+      - MYSQL_USER=MyMoney
+      - MYSQL_PASSWORD=1Tretadepassword?
+      - MYSQL_CHARSET=utf8mb4
+      - MYSQL_COLLATION=utf8mb4_unicode_ci
+    ports:
+      - "3306:3306"
+    networks:
+      - mymoney-network
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword123"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
   redis:
     image: redis:7-alpine
     container_name: MyMoney-Redis
@@ -22,16 +48,21 @@ services:
     container_name: MyMoney
     restart: unless-stopped
     depends_on:
+      mariadb:
+        condition: service_healthy
       redis:
         condition: service_healthy
     environment:
       - NODE_ENV=production
-      - DB_HOST=192.168.1.243
+      # Configuração MariaDB interno
+      - DB_HOST=mariadb
       - DB_PORT=3306
       - DB_NAME=${DB_NAME:-mymoney}
       - DB_USER=${DB_USER:-MyMoney}
       - DB_PASSWORD=${DB_PASSWORD:-1Tretadepassword?}
       - DB_SSL=false
+      # Configuração MariaDB externo (comentado)
+      # - DB_HOST=192.168.1.243
       - APP_PORT=${APP_PORT:-3001}
       - JWT_SECRET=${JWT_SECRET:-your_super_secure_jwt_secret_key_here_minimum_32_characters}
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-your_super_secure_refresh_secret_key_here_minimum_32_characters}
@@ -86,6 +117,8 @@ services:
           cpus: '0.25'
 
 volumes:
+  mariadb_data:
+    driver: local
   redis_data:
     driver: local
   app_uploads:

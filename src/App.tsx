@@ -25,10 +25,12 @@ import AIAdvisor from "./pages/AIAdvisor";
 import ImportExport from "./pages/ImportExport";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
+import TestComponent from "@/TestComponent";
 
 const queryClient = new QueryClient();
 
 const AppContent = () => {
+  console.log("🏠 AppContent component rendering");
   const [chatBotOpen, setChatBotOpen] = useState(false);
 
   return (
@@ -67,20 +69,24 @@ const AppContent = () => {
   );
 };
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <SettingsProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <AppContent />
-          </BrowserRouter>
-        </TooltipProvider>
-      </SettingsProvider>
-    </AuthProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  console.log("🎯 App component rendering");
+  
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <SettingsProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <AppContent />
+            </BrowserRouter>
+          </TooltipProvider>
+        </SettingsProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;

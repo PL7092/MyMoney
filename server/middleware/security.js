@@ -51,15 +51,11 @@ const helmetConfig = helmet({
       connectSrc: ["'self'"],
       frameSrc: ["'none'"],
       objectSrc: ["'none'"],
-      upgradeInsecureRequests: [],
+      // upgradeInsecureRequests: [], // Disabled for development
     },
   },
   crossOriginEmbedderPolicy: false,
-  hsts: {
-    maxAge: 31536000,
-    includeSubDomains: true,
-    preload: true
-  }
+  hsts: false // Disabled for development to allow HTTP
 });
 
 // Compression middleware

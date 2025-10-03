@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Servidor</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+        .info {
+            color: blue;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Teste de Servidor</h1>
+        <p class="success">✅ O servidor está funcionando corretamente!</p>
+        <p class="info">📅 Timestamp: <span id="timestamp"></span></p>
+        <p class="info">🌐 URL: <span id="url"></span></p>
+        
+        <h2>Próximos passos:</h2>
+        <ul>
+            <li>Verificar se o React está carregando</li>
+            <li>Verificar logs do console</li>
+            <li>Verificar se há erros de rede</li>
+        </ul>
+    </div>
+
+    <script>
+        document.getElementById('timestamp').textContent = new Date().toLocaleString();
+        document.getElementById('url').textContent = window.location.href;
+        console.log('🧪 Test page loaded successfully');
+    </script>
+</body>
+</html>
