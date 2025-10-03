@@ -4,9 +4,9 @@
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
--- Create database if not exists
-CREATE DATABASE IF NOT EXISTS personal_finance CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE personal_finance;
+-- Create database if not exists (será criada automaticamente pelo docker-compose)
+-- CREATE DATABASE IF NOT EXISTS mymoney CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE mymoney;
 
 -- Users table
 CREATE TABLE IF NOT EXISTS users (
