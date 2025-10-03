@@ -52,6 +52,7 @@ services:
     restart: unless-stopped
     secrets:
       - db_password
+      - redis_password
       - jwt_secret
       - jwt_refresh_secret
     depends_on:
@@ -147,3 +148,5 @@ secrets:
     file: ./secrets/jwt_secret.txt
   jwt_refresh_secret:
     file: ./secrets/jwt_refresh_secret.txt
+  redis_password:
+    file: ./secrets/redis_password.txt
