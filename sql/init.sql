@@ -8,10 +8,8 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- CREATE DATABASE IF NOT EXISTS mymoney CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE mymoney;
 
--- Create application user
-CREATE USER IF NOT EXISTS 'MyMoney'@'%' IDENTIFIED BY '1Tretadepassword?';
-GRANT ALL PRIVILEGES ON mymoney.* TO 'MyMoney'@'%';
-FLUSH PRIVILEGES;
+-- Create application user (password will be set via environment variable)
+-- Note: The password is managed by Docker secrets and environment variables
 
 -- Users table
 CREATE TABLE IF NOT EXISTS users (
