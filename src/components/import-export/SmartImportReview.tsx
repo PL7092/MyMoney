@@ -274,7 +274,7 @@ export const SmartImportReview: React.FC<SmartImportReviewProps> = ({
             amount: t.originalData.amount,
             type: t.suggestions.type,
             category_id: t.userChoices?.categoryId || t.suggestions.category.id,
-            account_id: t.userChoices?.accountId || null, // Note: account_id não está definido nas suggestions
+            account_id: null, // Note: account_id não está definido nas suggestions nem em userChoices
             userFeedback: t.status === 'reviewed' || t.status === 'accepted'
           }))
         })
