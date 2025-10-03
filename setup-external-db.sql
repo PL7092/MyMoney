@@ -1,0 +1,20 @@
+-- Script para configurar usuário MyMoney no MariaDB externo
+-- Execute este script no MariaDB externo como root
+
+-- Criar base de dados se não existir
+CREATE DATABASE IF NOT EXISTS mymoney CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- Criar usuário MyMoney se não existir
+CREATE USER IF NOT EXISTS 'MyMoney'@'%' IDENTIFIED BY 'MyMoney_secure_password_2024!';
+
+-- Conceder privilégios
+GRANT ALL PRIVILEGES ON mymoney.* TO 'MyMoney'@'%';
+
+-- Aplicar alterações
+FLUSH PRIVILEGES;
+
+-- Verificar se o usuário foi criado
+SELECT User, Host FROM mysql.user WHERE User='MyMoney';
+
+-- Mostrar privilégios do usuário
+SHOW GRANTS FOR 'MyMoney'@'%';
