@@ -3,9 +3,9 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
-import mysql from 'mysql2/promise';
 import { smartImportService } from '../services/SmartImportService.js';
 import { FileParsingService } from '../services/FileParsingService.js';
+import { DatabaseService } from '../db-commonjs.js';
 
 const router = express.Router();
 
@@ -43,23 +43,11 @@ const upload = multer({
   }
 });
 
-// Função para obter conexão com o banco
-async function getDbConnection() {
-  const connection = await mysql.createConnection({
-    host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT || 3306,
-    user: process.env.DB_USER || 'MyMoney',
-    password: process.env.DB_PASSWORD || '1Tretadepassword?',
-    database: process.env.DB_NAME || 'mymoney',
-    charset: 'utf8mb4'
-  });
-  return connection;
-}
+// Instância do serviço de base de dados
+const db = new DatabaseService();
 
 // POST /api/smart-import/upload - Upload e parsing inicial do arquivo
 router.post('/upload', upload.single('file'), async (req, res) => {
-  let connection;
-  
   try {
     const { file } = req;
     const { userId } = req.body;
@@ -81,10 +69,8 @@ router.post('/upload', upload.single('file'), async (req, res) => {
     // Gerar session ID único
     const sessionId = uuidv4();
     
-    connection = await getDbConnection();
-    
     // Criar registro da sessão de import
-    await connection.execute(`
+    await db.query(`
       INSERT INTO smart_import_sessions 
       (session_id, file_name, file_type, file_size, status, user_id)
       VALUES (?, ?, ?, ?, 'uploading', ?)
@@ -113,17 +99,11 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       success: false,
       error: 'Erro interno do servidor'
     });
-  } finally {
-    if (connection) {
-      await connection.end();
-    }
   }
 });
 
 // POST /api/smart-import/paste - Processar dados colados
 router.post('/paste', async (req, res) => {
-  let connection;
-  
   try {
     const { textData, userId } = req.body;
     
@@ -136,10 +116,8 @@ router.post('/paste', async (req, res) => {
     
     const sessionId = uuidv4();
     
-    connection = await getDbConnection();
-    
     // Criar registro da sessão
-    await connection.execute(`
+    await db.query(`
       INSERT INTO smart_import_sessions 
       (session_id, file_name, file_type, status, user_id)
       VALUES (?, ?, 'paste', 'processing', ?)
@@ -160,24 +138,16 @@ router.post('/paste', async (req, res) => {
       success: false,
       error: 'Erro interno do servidor'
     });
-  } finally {
-    if (connection) {
-      await connection.end();
-    }
   }
 });
 
 // GET /api/smart-import/status/:sessionId - Verificar status do processamento
 router.get('/status/:sessionId', async (req, res) => {
-  let connection;
-  
   try {
     const { sessionId } = req.params;
     
-    connection = await getDbConnection();
-    
     // Buscar status da sessão
-    const [sessionRows] = await connection.execute(`
+    const sessionRows = await db.query(`
       SELECT * FROM smart_import_sessions WHERE session_id = ?
     `, [sessionId]);
     
@@ -193,7 +163,7 @@ router.get('/status/:sessionId', async (req, res) => {
     // Buscar transações temporárias se o processamento estiver completo
     let transactions = [];
     if (session.status === 'completed') {
-      const [transactionRows] = await connection.execute(`
+      const transactionRows = await db.query(`
         SELECT * FROM temp_transactions 
         WHERE session_id = ? 
         ORDER BY normalized_date DESC, id ASC
@@ -214,10 +184,6 @@ router.get('/status/:sessionId', async (req, res) => {
       success: false,
       error: 'Erro interno do servidor'
     });
-  } finally {
-    if (connection) {
-      await connection.end();
-    }
   }
 });
 
