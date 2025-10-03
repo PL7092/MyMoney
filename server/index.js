@@ -639,6 +639,7 @@ app.get('/api/recurring-transactions', async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 });
+console.log('DEBUG: Recurring transactions GET route registered');
 
 app.post('/api/recurring-transactions', async (req, res) => {
   try {
