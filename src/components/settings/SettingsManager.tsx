@@ -395,6 +395,22 @@ export const SettingsManager: React.FC = () => {
     { id: 'data', label: 'Gestão de Dados', icon: FileText },
   ];
 
+  // Show loading state while settings are being loaded
+  if (settingsLoading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Configurações</h1>
+          <p className="text-muted-foreground">Gerir as suas preferências e definições da conta</p>
+        </div>
+        <div className="flex items-center justify-center p-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <span className="ml-2">A carregar configurações...</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}

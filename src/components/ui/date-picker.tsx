@@ -29,8 +29,9 @@ export function DatePicker({
   disabled = false
 }: DatePickerProps) {
   const { settings } = useSettings()
-  const locale = settings.appSettings.dateFormat === 'MM/DD/YYYY' ? enUS : pt
-  const formatPattern = settings.appSettings.dateFormat === 'MM/DD/YYYY' ? 'MM/dd/yyyy' : 'dd/MM/yyyy'
+  const dateFormat = settings?.appSettings?.dateFormat || 'DD/MM/YYYY'
+  const locale = dateFormat === 'MM/DD/YYYY' ? enUS : pt
+  const formatPattern = dateFormat === 'MM/DD/YYYY' ? 'MM/dd/yyyy' : 'dd/MM/yyyy'
 
   return (
     <Popover>

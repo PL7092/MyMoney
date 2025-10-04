@@ -117,15 +117,22 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
       setIsLoading(true);
       const response = await apiCall('/user-settings');
       if (response.success && response.data) {
-        setSettings(response.data);
+        // Ensure the response data has the correct structure
+        const settingsData = {
+          appSettings: response.data.appSettings || defaultSettings.appSettings,
+          notificationSettings: response.data.notificationSettings || defaultSettings.notificationSettings,
+          securitySettings: response.data.securitySettings || defaultSettings.securitySettings,
+        };
+        
+        setSettings(settingsData);
         
         // Apply theme immediately
-        applyTheme(response.data.appSettings.theme);
+        applyTheme(settingsData.appSettings.theme);
         
         // Save some settings to localStorage for immediate access
-        localStorage.setItem('currency', response.data.appSettings.currency);
-        localStorage.setItem('dateFormat', response.data.appSettings.dateFormat);
-        localStorage.setItem('language', response.data.appSettings.language);
+        localStorage.setItem('currency', settingsData.appSettings.currency);
+        localStorage.setItem('dateFormat', settingsData.appSettings.dateFormat);
+        localStorage.setItem('language', settingsData.appSettings.language);
       }
     } catch (error) {
       console.error('Error loading settings:', error);
@@ -143,15 +150,16 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
       const notificationSettings = localStorage.getItem('notifications');
       const securitySettings = localStorage.getItem('security');
 
-      if (appSettings || notificationSettings || securitySettings) {
-        setSettings({
-          appSettings: appSettings ? JSON.parse(appSettings) : defaultSettings.appSettings,
-          notificationSettings: notificationSettings ? JSON.parse(notificationSettings) : defaultSettings.notificationSettings,
-          securitySettings: securitySettings ? JSON.parse(securitySettings) : defaultSettings.securitySettings,
-        });
-      }
+      // Always set settings, using defaults if localStorage is empty
+      setSettings({
+        appSettings: appSettings ? JSON.parse(appSettings) : defaultSettings.appSettings,
+        notificationSettings: notificationSettings ? JSON.parse(notificationSettings) : defaultSettings.notificationSettings,
+        securitySettings: securitySettings ? JSON.parse(securitySettings) : defaultSettings.securitySettings,
+      });
     } catch (error) {
       console.error('Error loading settings from localStorage:', error);
+      // If there's an error parsing localStorage, use default settings
+      setSettings(defaultSettings);
     }
   };
 
@@ -329,14 +337,14 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
 
   // Listen for system theme changes
   useEffect(() => {
-    if (settings.appSettings.theme === 'system') {
+    if (settings?.appSettings?.theme === 'system') {
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
       const handleChange = () => applyTheme('system');
       
       mediaQuery.addEventListener('change', handleChange);
       return () => mediaQuery.removeEventListener('change', handleChange);
     }
-  }, [settings.appSettings.theme]);
+  }, [settings?.appSettings?.theme]);
 
   return (
     <SettingsContext.Provider
