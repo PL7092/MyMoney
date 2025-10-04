@@ -34,6 +34,7 @@ import {
 import { DatabaseService } from './db-commonjs.js';
 import legacyRoutes from './routes/legacy.js';
 import smartImportRoutes from './routes/smart-import.js';
+import promptsRoutes from './routes/prompts.js';
 
 class App {
   constructor() {
@@ -128,6 +129,9 @@ class App {
 
     // Smart Import routes
     this.app.use('/api/smart-import', smartImportRoutes);
+
+    // Prompts routes
+    this.app.use('/api/prompts', promptsRoutes);
 
     // Import existing routes from original server
     this.importLegacyRoutes();
