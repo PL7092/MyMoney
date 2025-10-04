@@ -31,7 +31,7 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Always set a default user - no authentication required
   const [user, setUser] = useState<User | null>({
-    id: 'public-user',
+    id: '1',
     email: 'public@mymoney.app',
     name: 'Usuário Público'
   });

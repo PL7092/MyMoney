@@ -123,7 +123,7 @@ export const ImportExport: React.FC = () => {
 
     const formData = new FormData();
     formData.append('file', selectedFile);
-    formData.append('userId', user?.id || 'public-user');
+    formData.append('userId', user?.id || '1');
 
     try {
       setUploadStatus({
@@ -182,7 +182,7 @@ export const ImportExport: React.FC = () => {
         },
         body: JSON.stringify({ 
           textData,
-          userId: user?.id || 'public-user'
+          userId: user?.id || '1'
         })
       });
 

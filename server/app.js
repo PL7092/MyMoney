@@ -98,7 +98,6 @@ class App {
     );
 
     this.app.post('/api/auth/logout',
-      this.auth.authenticateToken.bind(this.auth),
       this.logout.bind(this)
     );
 

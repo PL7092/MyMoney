@@ -10,7 +10,7 @@ const db = new DatabaseService();
 // Middleware to simulate a public user for all routes (no authentication required)
 router.use((req, res, next) => {
   req.user = {
-    userId: 'public-user',
+    userId: 1,
     email: 'public@mymoney.app',
     name: 'Public User'
   };
