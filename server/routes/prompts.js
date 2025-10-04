@@ -5,6 +5,7 @@ const router = express.Router();
 
 // Get all prompts
 router.get('/', async (req, res) => {
+  console.log('🔧 Prompts route called: GET /api/prompts');
   try {
     if (!db.pool) await db.createConnection();
     

@@ -91,6 +91,7 @@ app.post('/api/db/init', async (req, res) => {
 
 // Routes
 import promptsRouter from './routes/prompts.js';
+console.log('🔧 Registering /api/prompts route');
 app.use('/api/prompts', promptsRouter);
 
 app.get('/api/db/stats', async (req, res) => {

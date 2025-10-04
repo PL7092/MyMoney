@@ -711,26 +711,7 @@ export const SettingsManager: React.FC = () => {
                       </div>
                     ))}
 
-                    <div className="flex items-center justify-between py-2">
-                      <div>
-                        <p className="text-sm font-medium">Timeout de Sessão</p>
-                        <p className="text-xs text-muted-foreground">Minutos de inatividade antes de logout automático</p>
-                      </div>
-                      <Select 
-                        value={settings.securitySettings.sessionTimeout.toString()} 
-                        onValueChange={(value) => updateSecuritySettings({ sessionTimeout: parseInt(value) })}
-                      >
-                        <SelectTrigger className="w-24">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="15">15 min</SelectItem>
-                          <SelectItem value="30">30 min</SelectItem>
-                          <SelectItem value="60">1 hora</SelectItem>
-                          <SelectItem value="120">2 horas</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+
                   </div>
 
                   <Button onClick={handleSecuritySave} disabled={settingsLoading} className="w-full md:w-auto">
