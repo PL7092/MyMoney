@@ -227,8 +227,8 @@ services:
       NODE_ENV: production 
       DB_HOST: 192.168.1.243  # IP do seu host MariaDB 
       DB_PORT: 3306 
-      DB_NAME: finances 
-      DB_USER: PL709 
+      DB_NAME: mymoney 
+      DB_USER: MyMoney 
       DB_PASSWORD: ${DB_PASSWORD} 
       DB_SSL: false 
       UPLOAD_DIR: /app/uploads
@@ -441,15 +441,15 @@ services:
       NODE_ENV: production 
       DB_HOST: 192.168.1.243  # IP do seu host MariaDB 
       DB_PORT: 3306 
-      DB_NAME: finances 
-      DB_USER: PL709 
-      DB_PASSWORD: 1Tretadepassword? 
+      DB_NAME: mymoney 
+      DB_USER: MyMoney 
+      DB_PASSWORD: ${DB_PASSWORD} 
       DB_SSL: false 
       UPLOAD_DIR: /app/uploads
       # Configurações de Performance
       NODE_OPTIONS: --max-old-space-size=512
       # Configurações de Segurança
-      JWT_SECRET: SuaChaveJWTMuitoSegura123456789
+      JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRES_IN: 24h
       # Configurações de Logs
       LOG_LEVEL: info
@@ -556,17 +556,17 @@ services:
       <Mode/>
     </Variable>
     <Variable>
-      <Value>finances</Value>
+      <Value>mymoney</Value>
       <Name>DB_NAME</Name>
       <Mode/>
     </Variable>
     <Variable>
-      <Value>PL709</Value>
+      <Value>MyMoney</Value>
       <Name>DB_USER</Name>
       <Mode/>
     </Variable>
     <Variable>
-      <Value>1Tretadepassword?</Value>
+      <Value>${DB_PASSWORD}</Value>
       <Name>DB_PASSWORD</Name>
       <Mode/>
     </Variable>

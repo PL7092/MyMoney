@@ -59,9 +59,9 @@ export const SettingsManager: React.FC = () => {
   const [dbSettings, setDbSettings] = useState({
     host: 'mariadb',
     port: '3306',
-    database: 'personal_finance',
-    username: 'finance_user',
-    password: 'finance_user_password_2024',
+    database: 'mymoney',
+    username: 'MyMoney',
+    password: '', // Password should be retrieved from secrets
     useSSL: false,
     connectionTimeout: 30,
     maxConnections: 10,
@@ -1004,7 +1004,7 @@ export const SettingsManager: React.FC = () => {
                         id="db-name"
                         value={dbSettings.database}
                         onChange={(e) => setDbSettings(prev => ({ ...prev, database: e.target.value }))}
-                        placeholder="personal_finance"
+                        placeholder="mymoney"
                       />
                     </div>
 
@@ -1014,7 +1014,7 @@ export const SettingsManager: React.FC = () => {
                         id="db-username"
                         value={dbSettings.username}
                         onChange={(e) => setDbSettings(prev => ({ ...prev, username: e.target.value }))}
-                        placeholder="finance_user"
+                        placeholder="MyMoney"
                       />
                     </div>
 

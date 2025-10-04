@@ -55,7 +55,7 @@ export function readSecret(secretPath, envVar, defaultValue = '') {
  * Get database password from secret or environment
  */
 export function getDbPassword() {
-  return readSecret('/run/secrets/db_password', 'DB_PASSWORD', 'finance_user_password_2024');
+  return readSecret('/run/secrets/db_password', 'DB_PASSWORD', 'MyMoney_secure_password_2024!');
 }
 
 /**

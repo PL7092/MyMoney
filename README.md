@@ -191,9 +191,9 @@ ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001
 # Banco de Dados
 DB_HOST=mariadb
 DB_PORT=3306
-DB_USER=finance_user
-DB_PASSWORD=finance_user_password_2024
-DB_NAME=personal_finance
+DB_USER=MyMoney
+DB_PASSWORD=${DB_PASSWORD}
+DB_NAME=mymoney
 DB_CONNECTION_LIMIT=10
 
 # Redis
@@ -332,7 +332,7 @@ Níveis de log: `error`, `warn`, `info`, `debug`
    docker-compose logs mariadb
    
    # Verificar se o banco inicializou corretamente
-   docker-compose exec mariadb mysql -u finance_user -p finance_user_password_2024 -e "SHOW DATABASES;"
+   docker-compose exec mariadb mysql -u MyMoney -p -e "SHOW DATABASES;"
    ```
 
 3. **Aplicação não carrega**

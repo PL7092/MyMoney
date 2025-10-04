@@ -9,9 +9,9 @@ class DatabaseService {
     this.config = {
       host: process.env.DB_HOST || 'mariadb',
       port: parseInt(process.env.DB_PORT) || 3306,
-      user: process.env.DB_USER || 'finance_user',
+      user: process.env.DB_USER || 'MyMoney',
       password: getDbPassword(),
-      database: process.env.DB_NAME || 'personal_finance',
+      database: process.env.DB_NAME || 'mymoney',
       charset: process.env.DB_CHARSET || 'utf8mb4',
       collation: process.env.DB_COLLATION || 'utf8mb4_unicode_ci',
       timezone: process.env.DB_TIMEZONE || '+00:00',

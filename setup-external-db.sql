@@ -5,7 +5,8 @@
 CREATE DATABASE IF NOT EXISTS mymoney CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Criar usuário MyMoney se não existir
-CREATE USER IF NOT EXISTS 'MyMoney'@'%' IDENTIFIED BY 'MyMoney_secure_password_2024!';
+-- NOTA: Substitua @DB_PASSWORD pela senha real do secret antes de executar
+CREATE USER IF NOT EXISTS 'MyMoney'@'%' IDENTIFIED BY '@DB_PASSWORD';
 
 -- Conceder privilégios
 GRANT ALL PRIVILEGES ON mymoney.* TO 'MyMoney'@'%';

@@ -46,9 +46,9 @@ DB_PORT=3306
 
 # Credenciais da base de dados (devem coincidir com o container existente)
 DB_NAME=mymoney
-DB_USER=finance_user
-DB_PASSWORD=sua_senha_aqui
-DB_ROOT_PASSWORD=senha_root_aqui
+DB_USER=MyMoney
+DB_PASSWORD=${DB_PASSWORD}  # Obter do secret ou variável de ambiente
+DB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}  # Obter do secret ou variável de ambiente
 
 # Redis Configuration
 REDIS_HOST=redis  # Nome do serviço no external_links
@@ -113,8 +113,8 @@ docker inspect SEU_CONTAINER_MARIADB | grep IPAddress
 #### Criar a base de dados se não existir:
 ```sql
 CREATE DATABASE IF NOT EXISTS mymoney;
-CREATE USER IF NOT EXISTS 'finance_user'@'%' IDENTIFIED BY 'sua_senha';
-GRANT ALL PRIVILEGES ON mymoney.* TO 'finance_user'@'%';
+CREATE USER IF NOT EXISTS 'MyMoney'@'%' IDENTIFIED BY 'SUA_SENHA_SEGURA_AQUI';
+GRANT ALL PRIVILEGES ON mymoney.* TO 'MyMoney'@'%';
 FLUSH PRIVILEGES;
 ```
 

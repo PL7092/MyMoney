@@ -1,11 +1,11 @@
 #!/bin/bash
 # MariaDB Backup Script for Docker Environment
-# This script creates automated backups of the personal_finance database
+# This script creates automated backups of the mymoney database
 
 set -e
 
 # Configuration
-DB_NAME="${MARIADB_DATABASE:-personal_finance}"
+DB_NAME="${MARIADB_DATABASE:-mymoney}"
 DB_USER="root"
 DB_PASSWORD="${MARIADB_ROOT_PASSWORD:-rootpassword123}"
 DB_HOST="localhost"

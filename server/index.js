@@ -1283,9 +1283,9 @@ const initializeWithRetry = async (retries = 10, delay = 5000) => {
       await db.createConnection({
         host: process.env.DB_HOST || 'mariadb',
         port: parseInt(process.env.DB_PORT) || 3306,
-        username: process.env.DB_USER || 'finance_user',
+        username: process.env.DB_USER || 'MyMoney',
         password: getDbPassword(),
-        database: process.env.DB_NAME || 'personal_finance',
+        database: process.env.DB_NAME || 'mymoney',
         useSSL: process.env.DB_SSL === 'true'
       });
       

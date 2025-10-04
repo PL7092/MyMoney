@@ -26,9 +26,9 @@ class DatabaseService {
       host: (config.host && String(config.host).trim()) || 
             process.env.DB_HOST || 'mariadb',
       port: normalizePort(config.port || process.env.DB_PORT || 3306),
-      user: (config.username && String(config.username).trim()) || (process.env.DB_USER || 'finance_user'),
+      user: (config.username && String(config.username).trim()) || (process.env.DB_USER || 'MyMoney'),
       password: (config.password && String(config.password).trim()) || getDbPassword(),
-      database: (config.database && String(config.database).trim()) || (process.env.DB_NAME || 'personal_finance'),
+      database: (config.database && String(config.database).trim()) || (process.env.DB_NAME || 'mymoney'),
       ssl: (config.useSSL || process.env.DB_SSL === 'true') ? {} : false,
       connectionLimit: Number(config.maxConnections) || 10,
       connectTimeout: (Number(config.connectionTimeout) || 30) * 1000,

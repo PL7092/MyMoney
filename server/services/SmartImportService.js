@@ -1,5 +1,6 @@
 import mysql from 'mysql2/promise';
 import { logger } from './LoggerService.js';
+import { getDbPassword } from '../utils/secrets.js';
 
 /**
  * SmartImportService - Serviço para enriquecimento inteligente de transações importadas
@@ -11,7 +12,7 @@ export class SmartImportService {
       host: process.env.DB_HOST || 'localhost',
       port: process.env.DB_PORT || 3306,
       user: process.env.DB_USER || 'MyMoney',
-      password: process.env.DB_PASSWORD || '1Tretadepassword?',
+      password: getDbPassword(),
       database: process.env.DB_NAME || 'mymoney',
       charset: 'utf8mb4'
     };

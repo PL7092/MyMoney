@@ -1,5 +1,6 @@
 -- Alterar senha do usuário MyMoney para a senha do arquivo de secret
-ALTER USER 'MyMoney'@'%' IDENTIFIED BY 'MyMoney_secure_password_2024!';
+-- NOTA: Substitua @DB_PASSWORD pela senha real do secret antes de executar
+ALTER USER 'MyMoney'@'%' IDENTIFIED BY '@DB_PASSWORD';
 FLUSH PRIVILEGES;
 
 -- Verificar se a alteração foi bem-sucedida
