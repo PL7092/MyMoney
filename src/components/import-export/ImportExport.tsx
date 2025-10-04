@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useFinance } from '../../contexts/FinanceContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -31,6 +32,7 @@ export const ImportExport: React.FC = () => {
     transactions, budgets, accounts, categories,
     addTransaction, addBudget, addAccount 
   } = useFinance();
+  const { user } = useAuth();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -121,6 +123,7 @@ export const ImportExport: React.FC = () => {
 
     const formData = new FormData();
     formData.append('file', selectedFile);
+    formData.append('userId', user?.id || 'public-user');
 
     try {
       setUploadStatus({
@@ -177,7 +180,10 @@ export const ImportExport: React.FC = () => {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ textData })
+        body: JSON.stringify({ 
+          textData,
+          userId: user?.id || 'public-user'
+        })
       });
 
       if (!response.ok) {
