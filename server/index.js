@@ -1048,8 +1048,7 @@ app.get('/api/reports/summary', async (req, res) => {
   }
 });
 
-// Serve static files AFTER API routes
-app.use(express.static(path.join(__dirname, '../dist')));
+// Static files will be served later in the middleware chain
 
 // ========== SAMPLE DATA INITIALIZATION ==========
 app.post('/api/init-sample-data', async (req, res) => {
