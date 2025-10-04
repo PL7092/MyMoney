@@ -19,9 +19,6 @@ export interface NotificationSettings {
 }
 
 export interface SecuritySettings {
-  twoFactorAuth: boolean;
-  sessionTimeout: number;
-  loginAlerts: boolean;
   dataEncryption: boolean;
 }
 
@@ -57,9 +54,6 @@ const defaultSettings: UserSettings = {
     pushNotifications: false,
   },
   securitySettings: {
-    twoFactorAuth: false,
-    sessionTimeout: 30,
-    loginAlerts: true,
     dataEncryption: true,
   },
 };

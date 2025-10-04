@@ -691,18 +691,6 @@ export const SettingsManager: React.FC = () => {
                   <div className="space-y-4">
                     {[
                       { 
-                        key: 'twoFactorAuth', 
-                        label: 'Autenticação de Dois Fatores', 
-                        desc: 'Adicionar uma camada extra de segurança',
-                        type: 'switch'
-                      },
-                      { 
-                        key: 'loginAlerts', 
-                        label: 'Alertas de Login', 
-                        desc: 'Notificar sobre novos acessos à conta',
-                        type: 'switch'
-                      },
-                      { 
                         key: 'dataEncryption', 
                         label: 'Encriptação de Dados', 
                         desc: 'Encriptar dados sensíveis',
