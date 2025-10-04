@@ -11,7 +11,7 @@ RUN apk add --no-cache python3 make g++ && \
 
 # Copy package files first for better caching
 COPY package.json package-lock.json* ./
-RUN npm ci --legacy-peer-deps --no-audit --no-fund --only=production && \
+RUN npm install --legacy-peer-deps --no-audit --no-fund --only=production && \
     npm cache clean --force
 
 # =========================
@@ -27,7 +27,7 @@ RUN apk add --no-cache python3 make g++ && \
 
 # Copy package files
 COPY package.json package-lock.json* ./
-RUN npm ci --legacy-peer-deps --no-audit --no-fund
+RUN npm install --legacy-peer-deps --no-audit --no-fund
 
 # Copy configuration files first (changes less frequently)
 COPY vite.config.ts tsconfig*.json components.json tailwind.config.ts postcss.config.js ./
