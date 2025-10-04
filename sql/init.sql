@@ -318,6 +318,21 @@ INSERT IGNORE INTO user_settings (user_id, category, settings) VALUES
     'dataEncryption', true
 ));
 
+-- Entities table for managing transaction entities
+CREATE TABLE IF NOT EXISTS entities (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    type VARCHAR(100) DEFAULT 'general',
+    user_id INT NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_entities_user (user_id),
+    INDEX idx_entities_active (is_active),
+    UNIQUE KEY unique_entity_per_user (name, user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Create indexes for better performance
 CREATE INDEX idx_transactions_user_date ON transactions(user_id, date DESC);
 CREATE INDEX idx_budgets_user_active ON budgets(user_id, is_active);
