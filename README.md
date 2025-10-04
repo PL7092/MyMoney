@@ -8,7 +8,7 @@ Esta versão foi especialmente desenvolvida para funcionar **automaticamente** e
 
 - ✅ **Acesso público** - sem necessidade de login
 - ✅ **Instalação automática** de dependências
-- ✅ **Fallbacks inteligentes** (Redis → Memória, MariaDB → SQLite)
+- ✅ **Fallbacks inteligentes** (Redis → Memória)
 - ✅ **Verificações automáticas** de saúde dos serviços
 - ✅ **Inicialização automática** do banco de dados
 - ✅ **Scripts de teste** completos

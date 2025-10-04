@@ -6,6 +6,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { smartImportService } from '../services/SmartImportService.js';
 import { FileParsingService } from '../services/FileParsingService.js';
 import { DatabaseService } from '../db-commonjs.js';
+import mysql from 'mysql2/promise';
+import { getDbPassword } from '../utils/secrets.js';
 
 const router = express.Router();
 
@@ -45,6 +47,19 @@ const upload = multer({
 
 // Instância do serviço de base de dados
 const db = new DatabaseService();
+
+// Função para obter conexão com a base de dados
+async function getDbConnection() {
+  const dbConfig = {
+    host: process.env.DB_HOST || 'localhost',
+    port: process.env.DB_PORT || 3306,
+    user: process.env.DB_USER || 'MyMoney',
+    password: getDbPassword(),
+    database: process.env.DB_NAME || 'mymoney',
+    charset: 'utf8mb4'
+  };
+  return await mysql.createConnection(dbConfig);
+}
 
 // POST /api/smart-import/upload - Upload e parsing inicial do arquivo
 router.post('/upload', upload.single('file'), async (req, res) => {
@@ -548,7 +563,7 @@ async function processFileInBackground(sessionId, filePath, fileName, userId) {
       SET status = 'ai_processing', processed_rows = ?, successful_rows = ?, 
           updated_at = CURRENT_TIMESTAMP
       WHERE session_id = ?
-    `, [sampleTransactions.length, sampleTransactions.length, sessionId]);
+    `, [successfulRows, successfulRows, sessionId]);
     
     // Fechar conexão antes do processamento de IA
     await connection.end();

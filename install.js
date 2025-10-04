@@ -116,7 +116,7 @@ class AutoInstaller {
       this.log('Redis não disponível - usando cache em memória', 'warning');
     }
 
-    // Verificar se MariaDB/MySQL está disponível
+    // Verificar se MariaDB está disponível
     try {
       const { default: mysql } = await import('mysql2/promise');
       const connection = await mysql.createConnection({
@@ -129,9 +129,10 @@ class AutoInstaller {
       
       await connection.ping();
       await connection.end();
-      this.log('MariaDB/MySQL disponível ✓', 'success');
+      this.log('MariaDB disponível ✓', 'success');
     } catch (error) {
-      this.log('MariaDB/MySQL não disponível - usando SQLite como fallback', 'warning');
+      this.log('❌ MariaDB não disponível - verifique a configuração da base de dados', 'error');
+      throw new Error('MariaDB connection required but not available');
     }
   }
 
