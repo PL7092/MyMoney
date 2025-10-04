@@ -10,12 +10,23 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 .pnpm-debug.log*
+bun.lockb
 
 # Build outputs
 # dist - REMOVED: needed for production build
 build
 .next
 out
+
+# Development and testing files
+*.test.*
+*.spec.*
+test-*.js
+check-*.js
+dependency-compatibility-manual-report.md
+mariadb-validation-report.md
+service-validation-manual-report.md
+VALIDATION-SUMMARY.md
 
 # Environment files
 .env
@@ -55,6 +66,24 @@ README*.md
 CHANGELOG.md
 LICENSE
 docs/
+*.md
+DOCKER-DEPLOY-GUIDE.md
+EXTERNAL-MARIADB-SETUP.md
+IMPORT-EXPORT-CHANGES.md
+
+# Scripts and setup files
+setup*.ps1
+deploy-production.ps1
+install.js
+setup-external-db.sql
+update-user-password.sql
+setup-status.json
+
+# Backup files
+backups/
+Dockerfile - Cópia
+response.html
+test.html
 
 # Testing
 coverage/

@@ -46,30 +46,29 @@ RUN npm run build && \
 # =========================
 FROM node:20-alpine AS production
 
-WORKDIR /app
+# Create user and directories first (before WORKDIR)
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S appuser -u 1001 -G nodejs
 
-# Install runtime dependencies and setup user in single layer
+# Install runtime dependencies
 RUN apk add --no-cache wget curl dumb-init mariadb-client gzip && \
-    rm -rf /var/cache/apk/* && \
-    addgroup -g 1001 -S nodejs && \
-    adduser -S appuser -u 1001 -G nodejs && \
-    mkdir -p /app/uploads /app/config /app/logs /app/backups
+    rm -rf /var/cache/apk/*
 
-# Copy production dependencies
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/package.json ./
+# Set workdir and create directories with correct ownership from start
+WORKDIR /app
+RUN mkdir -p uploads config logs backups && \
+    chown -R appuser:nodejs /app
 
-# Copy build artifacts
-COPY --from=builder /app/dist ./dist
+# Copy files with correct ownership (avoids expensive chown later)
+COPY --from=deps --chown=appuser:nodejs /app/node_modules ./node_modules
+COPY --from=deps --chown=appuser:nodejs /app/package.json ./
+COPY --from=builder --chown=appuser:nodejs /app/dist ./dist
+COPY --chown=appuser:nodejs server ./server
+COPY --chown=appuser:nodejs sql ./sql
 
-# Copy server files
-COPY server ./server
-COPY sql ./sql
-
-# Set permissions in single layer
-RUN chown -R appuser:nodejs /app && \
-    chmod -R 755 /app && \
-    chmod -R 777 /app/uploads /app/config /app/logs /app/backups
+# Set minimal permissions (avoid recursive chmod on large directories)
+RUN chmod 755 /app && \
+    chmod -R 777 uploads config logs backups
 
 # Switch to non-root user
 USER appuser
