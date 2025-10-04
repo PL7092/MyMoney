@@ -13,14 +13,15 @@ const router = express.Router();
 
 // Configuração do multer para upload de arquivos
 const storage = multer.diskStorage({
-  destination: async (req, file, cb) => {
+  destination: (req, file, cb) => {
     const uploadDir = path.join(process.cwd(), 'uploads', 'smart-import');
-    try {
-      await fs.mkdir(uploadDir, { recursive: true });
-      cb(null, uploadDir);
-    } catch (error) {
-      cb(error);
-    }
+    fs.mkdir(uploadDir, { recursive: true }, (error) => {
+      if (error) {
+        cb(error);
+      } else {
+        cb(null, uploadDir);
+      }
+    });
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -642,7 +643,9 @@ async function processTextDataInBackground(sessionId, textData, userId) {
     `, [transactions.length, transactions.length, transactions.length, sessionId]);
     
     // Inserir transações
-    for (const transaction of transactions) {
+    for (let i = 0; i < transactions.length; i++) {
+      const transaction = transactions[i];
+      const originalLine = lines[i] || '';
       await connection.execute(`
         INSERT INTO temp_transactions 
         (session_id, original_data, normalized_date, normalized_description, 
@@ -650,7 +653,7 @@ async function processTextDataInBackground(sessionId, textData, userId) {
         VALUES (?, ?, ?, ?, ?, ?, ?)
       `, [
         sessionId,
-        JSON.stringify({ originalLine: line }),
+        JSON.stringify({ originalLine: originalLine }),
         transaction.date,
         transaction.description,
         transaction.amount,
